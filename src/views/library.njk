@@ -1,0 +1,38 @@
+{% extends "layout.njk" %}
+{% block content %}
+<header class="page-head">
+  <h1 class="large-title">Bibliothèque</h1>
+</header>
+
+<form class="toolbar" method="get" action="/"
+      hx-get="/" hx-target="#shelf" hx-trigger="input changed delay:300ms from:input[name=q], change"
+      hx-push-url="true">
+  <label class="search">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3a7 7 0 0 1 5.6 11.2l5.1 5.1-1.4 1.4-5.1-5.1A7 7 0 1 1 10 3zm0 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10z"/></svg>
+    <span class="visually-hidden">Rechercher</span>
+    <input type="search" name="q" value="{{ q or '' }}" placeholder="Titre, auteur ou ISBN" autocomplete="off">
+  </label>
+  <div class="viewswitch" role="radiogroup" aria-label="Affichage">
+    <label title="Grille"><input type="radio" name="vue" value="grille" {% if view == 'grille' %}checked{% endif %}>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 0h8v8h-8z"/></svg>
+      <span class="visually-hidden">Grille</span></label>
+    <label title="Liste"><input type="radio" name="vue" value="liste" {% if view == 'liste' %}checked{% endif %}>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18v3H3zm0 6.5h18v3H3zM3 17h18v3H3z"/></svg>
+      <span class="visually-hidden">Liste</span></label>
+  </div>
+
+  <div class="chips" role="radiogroup" aria-label="Filtrer par statut">
+    <label class="chip"><input type="radio" name="statut" value="" {% if not status %}checked{% endif %}>
+      Tous <span class="chip__n">{{ counts.all or 0 }}</span></label>
+    {% for s in statuses %}
+    <label class="chip"><input type="radio" name="statut" value="{{ s.value }}" {% if status == s.value %}checked{% endif %}>
+      {{ s.label }} <span class="chip__n">{{ counts[s.value] or 0 }}</span></label>
+    {% endfor %}
+  </div>
+  <noscript><button type="submit" class="button button--quiet">Filtrer</button></noscript>
+</form>
+
+<section id="shelf" aria-live="polite">
+  {% include "partials/shelf.njk" %}
+</section>
+{% endblock %}

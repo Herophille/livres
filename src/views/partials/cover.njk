@@ -1,0 +1,9 @@
+{# Couverture ou couverture de remplacement "toilée" générée à partir du titre #}
+{% if book.cover_file %}
+  <img class="cover" src="/couvertures/{{ book.cover_file }}{{ '_t' if thumb }}.webp" alt="" loading="lazy" decoding="async">
+{% else %}
+  <div class="cover cover--blank" style="--h: {{ book.title | hue }}" aria-hidden="true">
+    <span class="cover__title">{{ book.title }}</span>
+    {% if book.authors %}<span class="cover__author">{{ book.authors }}</span>{% endif %}
+  </div>
+{% endif %}

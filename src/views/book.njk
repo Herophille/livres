@@ -1,0 +1,45 @@
+{% extends "layout.njk" %}
+{% block content %}
+<a class="back" href="/">Bibliothèque</a>
+
+{% if notice %}<p class="notice">{{ notice }}</p>{% endif %}
+
+<article class="book">
+  <div class="book__cover">
+    {% set book = { title: work.title, authors: work.authors, cover_file: edition.cover_file if edition else null } %}
+    {% set thumb = false %}
+    {% include "partials/cover.njk" %}
+  </div>
+
+  <div class="book__main">
+    <h1 class="book__title">{{ work.title }}</h1>
+    {% if work.authors %}<p class="book__authors">{{ work.authors }}</p>{% endif %}
+
+    {% include "partials/status.njk" %}
+
+    <dl class="details">
+      {% if work.genre_name %}<div><dt>Genre</dt><dd>{{ work.genre_name }}</dd></div>{% endif %}
+      {% if work.country_code %}<div><dt>Pays de première publication</dt><dd>{{ work.country_code | countryLabel }}</dd></div>{% endif %}
+      {% if work.original_language %}<div><dt>Langue originale</dt><dd>{{ work.original_language | languageLabel }}</dd></div>{% endif %}
+      {% if edition %}
+        {% if edition.language %}<div><dt>Langue de cette édition</dt><dd>{{ edition.language | languageLabel }}</dd></div>{% endif %}
+        {% if edition.format %}<div><dt>Format</dt><dd>{{ edition.format | formatLabel }}</dd></div>{% endif %}
+        {% if edition.page_count %}<div><dt>Pages</dt><dd>{{ edition.page_count }}</dd></div>{% endif %}
+        {% if edition.publisher %}<div><dt>Éditeur</dt><dd>{{ edition.publisher }}</dd></div>{% endif %}
+        {% if edition.published_date %}<div><dt>Publication</dt><dd>{{ edition.published_date }}</dd></div>{% endif %}
+        {% if edition.isbn %}<div><dt>ISBN</dt><dd class="tabular">{{ edition.isbn }}</dd></div>{% endif %}
+      {% endif %}
+    </dl>
+
+    <div class="actions">
+      <a class="button button--quiet" href="/livres/{{ work.id }}/modifier">Modifier la fiche</a>
+      {% if currentUser.role == 'admin' %}
+      <form method="post" action="/livres/{{ work.id }}/supprimer"
+            onsubmit="return confirm('Supprimer ce livre pour tous les utilisateurs ? Cette action est définitive.')">
+        <button type="submit" class="button button--danger">Supprimer le livre</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</article>
+{% endblock %}

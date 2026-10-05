@@ -1,0 +1,29 @@
+{
+  "name": "livres",
+  "version": "0.1.0",
+  "description": "Suivi de lectures auto-hébergé",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.1.2",
+    "@fastify/formbody": "^9.0.0",
+    "@fastify/multipart": "^10.1.2",
+    "@fastify/static": "^10.1.5",
+    "@fastify/view": "^12.0.0",
+    "@node-rs/argon2": "^2.2.1",
+    "@zxing/library": "^0.21.3",
+    "better-sqlite3": "^13.0.3",
+    "fast-xml-parser": "^5.11.2",
+    "fastify": "^5.12.5",
+    "htmx.org": "^2.0.11",
+    "i18n-iso-countries": "^7.14.0",
+    "nunjucks": "^3.2.4",
+    "sharp": "^0.35.5"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  }
+}

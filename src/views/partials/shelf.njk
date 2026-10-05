@@ -1,0 +1,39 @@
+{% if books.length == 0 %}
+  <div class="empty">
+    {% if q %}
+      <p>Aucun livre ne correspond à « {{ q }} ».</p>
+    {% elif status %}
+      <p>Aucun livre avec le statut « {{ status | statusLabel }} ».</p>
+    {% else %}
+      <p>Votre bibliothèque est vide.</p>
+      <a class="button" href="/ajouter">Ajouter un premier livre</a>
+    {% endif %}
+  </div>
+{% elif view == 'liste' %}
+  <ul class="booklist">
+    {% for book in books %}
+    <li>
+      <a href="/livres/{{ book.id }}" class="booklist__row">
+        <span class="booklist__cover">{% set thumb = true %}{% include "partials/cover.njk" %}</span>
+        <span class="booklist__text">
+          <span class="booklist__title">{{ book.title }}</span>
+          <span class="booklist__author">{{ book.authors }}</span>
+        </span>
+        <span class="status-dot status-dot--{{ book.status }}" title="{{ book.status | statusLabel }}"></span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <ul class="grid">
+    {% for book in books %}
+    <li>
+      <a href="/livres/{{ book.id }}" class="grid__item">
+        {% set thumb = true %}{% include "partials/cover.njk" %}
+        <span class="grid__title">{{ book.title }}</span>
+        <span class="grid__author">{{ book.authors }}</span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+{% endif %}

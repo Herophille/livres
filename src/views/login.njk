@@ -1,0 +1,19 @@
+{% extends "layout.njk" %}
+{% block content %}
+<div class="login">
+  <img src="/static/img/icon.svg" alt="" class="login__mark" width="72" height="72">
+  <h1 class="login__title">Livres</h1>
+  <form method="post" action="/connexion" class="group">
+    {% if error %}<p class="field-error" role="alert">{{ error }}</p>{% endif %}
+    <label class="field">
+      <span class="field-label">Nom d'utilisateur</span>
+      <input name="username" value="{{ username or '' }}" autocomplete="username" autocapitalize="none" required autofocus>
+    </label>
+    <label class="field">
+      <span class="field-label">Mot de passe</span>
+      <input name="password" type="password" autocomplete="current-password" required>
+    </label>
+    <button type="submit" class="button button--wide">Se connecter</button>
+  </form>
+</div>
+{% endblock %}

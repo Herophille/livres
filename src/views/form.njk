@@ -1,0 +1,123 @@
+{% extends "layout.njk" %}
+
+{% macro err(name) %}{% if errors and errors[name] %}<p class="field-error" id="{{ name }}-error">{{ errors[name] }}</p>{% endif %}{% endmacro %}
+{% macro invalid(name) %}{% if errors and errors[name] %}aria-invalid="true" aria-describedby="{{ name }}-error"{% endif %}{% endmacro %}
+
+{% block content %}
+<a class="back" href="{{ '/livres/' ~ workId if mode == 'edit' else '/ajouter' }}">{{ 'Retour au livre' if mode == 'edit' else 'Ajouter un livre' }}</a>
+<header class="page-head">
+  <h1 class="large-title large-title--small">{{ 'Modifier la fiche' if mode == 'edit' else 'Nouveau livre' }}</h1>
+</header>
+
+{% if notice %}<p class="notice">{{ notice }}</p>{% endif %}
+{% if errors %}<p class="notice notice--error">Certains champs sont à corriger.</p>{% endif %}
+
+<form method="post" action="{{ '/livres/' ~ workId if mode == 'edit' else '/livres' }}" enctype="multipart/form-data" class="bookform">
+
+  <fieldset class="group">
+    <legend>Couverture</legend>
+    <div class="cover-field">
+      {% if currentCover %}
+        <img class="cover cover--preview" src="/couvertures/{{ currentCover }}_t.webp" alt="Couverture actuelle">
+      {% elif values.cover_url %}
+        <img class="cover cover--preview" src="{{ values.cover_url }}" alt="Couverture trouvée" referrerpolicy="no-referrer">
+        <input type="hidden" name="cover_url" value="{{ values.cover_url }}">
+      {% else %}
+        <div class="cover cover--preview cover--empty" aria-hidden="true"></div>
+      {% endif %}
+      <label class="button button--quiet">
+        {{ 'Remplacer la couverture' if currentCover or values.cover_url else 'Ajouter une couverture' }}
+        <input type="file" name="cover" accept="image/*" class="visually-hidden">
+      </label>
+    </div>
+  </fieldset>
+
+  <fieldset class="group">
+    <legend>L'œuvre</legend>
+    <label class="field">
+      <span class="field-label">Titre</span>
+      <input name="title" value="{{ values.title or '' }}" required {{ invalid('title') }}>
+      {{ err('title') }}
+    </label>
+    <label class="field">
+      <span class="field-label">Auteurs</span>
+      <input name="authors" value="{{ values.authors or '' }}" placeholder="Séparés par des virgules">
+    </label>
+    <label class="field">
+      <span class="field-label">Genre</span>
+      <select name="genre_id">
+        <option value="">Choisir…</option>
+        {% for g in genres %}<option value="{{ g.id }}" {% if values.genre_id == g.id or values.genre_id == g.id | string %}selected{% endif %}>{{ g.name }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="field">
+      <span class="field-label">Pays de première publication</span>
+      <select name="country_code">
+        <option value="">Choisir…</option>
+        {% for c in countries %}<option value="{{ c.value }}" {% if values.country_code == c.value %}selected{% endif %}>{{ c.label }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="field">
+      <span class="field-label">Langue originale</span>
+      <select name="original_language">
+        <option value="">Choisir…</option>
+        {% for l in languages %}<option value="{{ l.value }}" {% if values.original_language == l.value %}selected{% endif %}>{{ l.label }}</option>{% endfor %}
+      </select>
+    </label>
+  </fieldset>
+
+  <fieldset class="group">
+    <legend>Cette édition</legend>
+    <label class="field">
+      <span class="field-label">ISBN</span>
+      <input name="isbn" inputmode="numeric" value="{{ values.isbn or '' }}" {{ invalid('isbn') }}>
+      {{ err('isbn') }}
+    </label>
+    <div class="field-row">
+      <label class="field">
+        <span class="field-label">Langue</span>
+        <select name="language">
+          <option value="">Choisir…</option>
+          {% for l in languages %}<option value="{{ l.value }}" {% if values.language == l.value %}selected{% endif %}>{{ l.label }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="field">
+        <span class="field-label">Format</span>
+        <select name="format">
+          <option value="">Choisir…</option>
+          {% for f in formats %}<option value="{{ f.value }}" {% if values.format == f.value %}selected{% endif %}>{{ f.label }}</option>{% endfor %}
+        </select>
+      </label>
+    </div>
+    <div class="field-row">
+      <label class="field">
+        <span class="field-label">Pages</span>
+        <input name="page_count" inputmode="numeric" value="{{ values.page_count or '' }}">
+      </label>
+      <label class="field">
+        <span class="field-label">Date de publication</span>
+        <input name="published_date" value="{{ values.published_date or '' }}" placeholder="2021 ou 2021-03-15">
+      </label>
+    </div>
+    <label class="field">
+      <span class="field-label">Éditeur</span>
+      <input name="publisher" value="{{ values.publisher or '' }}">
+    </label>
+  </fieldset>
+
+  {% if mode == 'create' %}
+  <fieldset class="group">
+    <legend>Dans ma bibliothèque</legend>
+    <div class="chips chips--wrap">
+      {% for s in statuses %}
+      <label class="chip"><input type="radio" name="status" value="{{ s.value }}" {% if values.status == s.value %}checked{% endif %}>{{ s.label }}</label>
+      {% endfor %}
+    </div>
+  </fieldset>
+  {% endif %}
+
+  <div class="form-actions">
+    <button type="submit" class="button button--wide">{{ 'Enregistrer les modifications' if mode == 'edit' else 'Ajouter le livre' }}</button>
+  </div>
+</form>
+{% endblock %}

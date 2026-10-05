@@ -1,0 +1,19 @@
+services:
+  livres:
+    build: .
+    image: livres:latest
+    container_name: livres
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-8090}:3000"
+    environment:
+      TZ: ${TZ:-Europe/Paris}
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      COOKIE_SECRET: ${COOKIE_SECRET}
+      GOOGLE_BOOKS_API_KEY: ${GOOGLE_BOOKS_API_KEY:-}
+      BACKUP_KEEP: ${BACKUP_KEEP:-14}
+      BACKUP_HOUR: ${BACKUP_HOUR:-3}
+    volumes:
+      - ${DATA_PATH:-./data}:/data
+      - ${BACKUP_PATH:-./backups}:/backups

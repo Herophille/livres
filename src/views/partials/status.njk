@@ -1,0 +1,19 @@
+<div id="status" class="status-picker">
+  <form hx-post="/livres/{{ work.id }}/statut" hx-target="#status" hx-swap="outerHTML" method="post" action="/livres/{{ work.id }}/statut">
+    <fieldset>
+      <legend class="visually-hidden">Statut de lecture</legend>
+      <div class="segmented">
+        {% for s in statuses %}
+        <button type="submit" name="status" value="{{ s.value }}"
+                class="segmented__item {% if reading and reading.status == s.value %}is-on{% endif %}"
+                aria-pressed="{{ 'true' if reading and reading.status == s.value else 'false' }}">{{ s.label }}</button>
+        {% endfor %}
+      </div>
+    </fieldset>
+    {% if reading %}
+      <button type="submit" name="status" value="retirer" class="link-button">Retirer de ma bibliothèque</button>
+    {% else %}
+      <p class="hint">Ce livre n'est pas dans votre bibliothèque. Choisissez un statut pour l'ajouter.</p>
+    {% endif %}
+  </form>
+</div>
