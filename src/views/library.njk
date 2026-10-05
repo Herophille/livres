@@ -4,9 +4,15 @@
   <h1 class="large-title">Bibliothèque</h1>
 </header>
 
+<nav class="segmented segmented--2 scope" aria-label="Livres affichés">
+  <a href="/?vue={{ view }}" class="segmented__item {% if scope == 'moi' %}is-on{% endif %}" {% if scope == 'moi' %}aria-current="page"{% endif %}>Mes livres</a>
+  <a href="/?portee=tous&amp;vue={{ view }}" class="segmented__item {% if scope == 'tous' %}is-on{% endif %}" {% if scope == 'tous' %}aria-current="page"{% endif %}>Tous les livres</a>
+</nav>
+
 <form class="toolbar" method="get" action="/"
       hx-get="/" hx-target="#shelf" hx-trigger="input changed delay:300ms from:input[name=q], change"
       hx-push-url="true">
+  {% if scope == 'tous' %}<input type="hidden" name="portee" value="tous">{% endif %}
   <label class="search">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3a7 7 0 0 1 5.6 11.2l5.1 5.1-1.4 1.4-5.1-5.1A7 7 0 1 1 10 3zm0 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10z"/></svg>
     <span class="visually-hidden">Rechercher</span>
@@ -21,6 +27,23 @@
       <span class="visually-hidden">Liste</span></label>
   </div>
 
+  <div class="filters">
+    <label class="filter">
+      <span class="visually-hidden">Genre</span>
+      <select name="genre">
+        <option value="">Tous les genres</option>
+        {% for g in genres %}<option value="{{ g.id }}" {% if genreId == g.id %}selected{% endif %}>{{ g.name }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="filter">
+      <span class="visually-hidden">Trier par</span>
+      <select name="tri">
+        {% for s in sorts %}<option value="{{ s.value }}" {% if sort == s.value %}selected{% endif %}>Tri : {{ s.label | lower }}</option>{% endfor %}
+      </select>
+    </label>
+  </div>
+
+  {% if scope == 'moi' %}
   <div class="chips" role="radiogroup" aria-label="Filtrer par statut">
     <label class="chip"><input type="radio" name="statut" value="" {% if not status %}checked{% endif %}>
       Tous <span class="chip__n">{{ counts.all or 0 }}</span></label>
@@ -29,6 +52,7 @@
       {{ s.label }} <span class="chip__n">{{ counts[s.value] or 0 }}</span></label>
     {% endfor %}
   </div>
+  {% endif %}
   <noscript><button type="submit" class="button button--quiet">Filtrer</button></noscript>
 </form>
 

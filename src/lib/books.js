@@ -27,6 +27,7 @@ export function parseBookForm(body) {
     language: clean(body.language),
     format: clean(body.format),
     page_count: toInt(body.page_count),
+    work_id: toInt(body.work_id), // rattacher cette édition à une œuvre déjà au catalogue
   };
 
   if (!data.title) errors.title = 'Le titre est obligatoire.';
@@ -35,6 +36,7 @@ export function parseBookForm(body) {
     if (!data.isbn) errors.isbn = "Cet ISBN n'est pas valide. Vérifiez les chiffres ou laissez le champ vide.";
   }
   if (data.format && !FORMAT_LABELS[data.format]) data.format = null;
+  if (data.work_id && !db.prepare('SELECT 1 FROM works WHERE id = ?').get(data.work_id)) data.work_id = null;
   return { data, errors };
 }
 
@@ -49,19 +51,33 @@ export function isIsbnTaken(isbn, exceptEditionId = null) {
 }
 
 export const createBook = db.transaction((data, coverFile, userId, status) => {
-  const work = db.prepare(`
-    INSERT INTO works (title, sort_title, authors, genre_id, country_code, original_language, created_by)
-    VALUES (@title, @sort_title, @authors, @genre_id, @country_code, @original_language, @created_by)
-  `).run({ ...data, sort_title: sortTitle(data.title), created_by: userId });
-  const workId = Number(work.lastInsertRowid);
+  let workId = data.work_id;
+  let editionTitle = null;
+  if (workId) {
+    // Nouvelle édition (ou traduction) d'une œuvre existante : on ne touche pas à l'œuvre,
+    // sauf pour compléter les champs encore vides.
+    const work = db.prepare('SELECT title FROM works WHERE id = ?').get(workId);
+    if (data.title !== work.title) editionTitle = data.title;
+    db.prepare(`
+      UPDATE works SET genre_id = COALESCE(genre_id, @genre_id), country_code = COALESCE(country_code, @country_code),
+        original_language = COALESCE(original_language, @original_language), updated_at = datetime('now')
+      WHERE id = @id
+    `).run({ ...data, id: workId });
+  } else {
+    const work = db.prepare(`
+      INSERT INTO works (title, sort_title, authors, genre_id, country_code, original_language, created_by)
+      VALUES (@title, @sort_title, @authors, @genre_id, @country_code, @original_language, @created_by)
+    `).run({ ...data, sort_title: sortTitle(data.title), created_by: userId });
+    workId = Number(work.lastInsertRowid);
+  }
 
   const edition = db.prepare(`
-    INSERT INTO editions (work_id, isbn, publisher, published_date, language, format, page_count, cover_file)
-    VALUES (@work_id, @isbn, @publisher, @published_date, @language, @format, @page_count, @cover_file)
-  `).run({ ...data, work_id: workId, cover_file: coverFile });
+    INSERT INTO editions (work_id, isbn, edition_title, publisher, published_date, language, format, page_count, cover_file)
+    VALUES (@work_id, @isbn, @edition_title, @publisher, @published_date, @language, @format, @page_count, @cover_file)
+  `).run({ ...data, work_id: workId, edition_title: editionTitle, cover_file: coverFile });
 
   if (status && STATUS_LABELS[status]) {
-    setReadingStatus(userId, workId, status, Number(edition.lastInsertRowid));
+    changeReadingStatus(userId, workId, status, Number(edition.lastInsertRowid));
   }
   return workId;
 });
@@ -91,9 +107,10 @@ export function getBook(workId, userId) {
   if (!work) return null;
 
   const reading = db.prepare('SELECT * FROM readings WHERE user_id = ? AND work_id = ?').get(userId, workId) || null;
-  const editions = db.prepare('SELECT * FROM editions WHERE work_id = ? ORDER BY id').all(workId);
+  const review = db.prepare('SELECT * FROM reviews WHERE user_id = ? AND work_id = ?').get(userId, workId) || null;
+  const editions = db.prepare('SELECT * FROM editions WHERE work_id = ? ORDER BY published_date, id').all(workId);
   const edition = editions.find((e) => e.id === reading?.edition_id) || editions[0] || null;
-  return { work, edition, editions, reading };
+  return { work, edition, editions, reading, review };
 }
 
 export function setReadingStatus(userId, workId, status, editionId = null) {
@@ -107,6 +124,95 @@ export function setReadingStatus(userId, workId, status, editionId = null) {
   `).run(userId, workId, editionId, status);
 }
 
+// Changement de statut depuis la page du livre. Les dates se remplissent toutes seules
+// quand on suit sa lecture en direct (on commence, puis on finit), jamais quand on
+// classe après coup un livre lu il y a longtemps.
+export function changeReadingStatus(userId, workId, status, editionId = null) {
+  const before = db.prepare('SELECT status FROM readings WHERE user_id = ? AND work_id = ?').pluck().get(userId, workId);
+  setReadingStatus(userId, workId, status, editionId);
+  if (status === 'en_cours') {
+    db.prepare(`UPDATE readings SET started_on = COALESCE(started_on, date('now', 'localtime'))
+      WHERE user_id = ? AND work_id = ?`).run(userId, workId);
+  }
+  if (status === 'lu' && (before === 'en_cours' || before === 'en_pause')) {
+    db.prepare(`UPDATE readings SET finished_on = COALESCE(finished_on, date('now', 'localtime'))
+      WHERE user_id = ? AND work_id = ?`).run(userId, workId);
+  }
+}
+
+const isDate = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v));
+
+// Dates facultatives de début et de fin. Renvoie un message d'erreur ou null.
+export function setReadingDates(userId, workId, startedRaw, finishedRaw) {
+  const started = clean(startedRaw);
+  const finished = clean(finishedRaw);
+  if ((started && !isDate(started)) || (finished && !isDate(finished))) return 'Date invalide.';
+  if (started && finished && finished < started) return 'La date de fin est avant la date de début.';
+  db.prepare(`UPDATE readings SET started_on = ?, finished_on = ?, updated_at = datetime('now')
+    WHERE user_id = ? AND work_id = ?`).run(started, finished, userId, workId);
+  return null;
+}
+
+// L'édition que l'utilisateur lit ou possède (sa couverture apparaît dans sa bibliothèque)
+export function setReadingEdition(userId, workId, editionId) {
+  db.prepare(`UPDATE readings SET edition_id = ? WHERE user_id = ? AND work_id = ?
+    AND ? IN (SELECT id FROM editions WHERE work_id = ?)`).run(editionId, userId, workId, editionId, workId);
+}
+
+// Avis : note de 1 à 5 (entière), texte, recommandation. Tout est facultatif.
+export function saveReview(userId, workId, body) {
+  const rating = toInt(body.rating);
+  const review = {
+    rating: rating && rating <= 5 ? rating : null,
+    body: clean(body.body)?.slice(0, 10000) ?? null,
+    recommends: body.recommends === 'oui' ? 1 : body.recommends === 'non' ? 0 : null,
+  };
+  if (review.rating == null && review.body == null && review.recommends == null) {
+    deleteReview(userId, workId);
+    return;
+  }
+  db.prepare(`
+    INSERT INTO reviews (user_id, work_id, rating, body, recommends)
+    VALUES (@userId, @workId, @rating, @body, @recommends)
+    ON CONFLICT (user_id, work_id) DO UPDATE SET
+      rating = excluded.rating, body = excluded.body, recommends = excluded.recommends,
+      updated_at = datetime('now')
+  `).run({ ...review, userId, workId });
+}
+
+export function deleteReview(userId, workId) {
+  db.prepare('DELETE FROM reviews WHERE user_id = ? AND work_id = ?').run(userId, workId);
+}
+
+// Œuvres du catalogue qui ressemblent au livre qu'on ajoute (même titre ou même auteur),
+// pour proposer d'y rattacher une nouvelle édition ou une traduction.
+const normalize = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const surnames = (authors) => String(authors || '').split(',')
+  .map((a) => normalize(a).trim().split(/\s+/).pop())
+  .filter((n) => n && n.length >= 3);
+
+export function findSimilarWorks({ title, authors }, limit = 5) {
+  const key = title ? sortTitle(title) : null;
+  const names = surnames(authors);
+  if (!key && names.length === 0) return [];
+
+  const works = db.prepare(`
+    SELECT w.id, w.title, w.sort_title, w.authors,
+      (SELECT cover_file FROM editions WHERE work_id = w.id AND cover_file IS NOT NULL LIMIT 1) AS cover_file,
+      (SELECT COUNT(*) FROM editions WHERE work_id = w.id) AS edition_count
+    FROM works w
+  `).all();
+  return works
+    .map((w) => {
+      const sameTitle = key && (w.sort_title === key || w.sort_title.startsWith(key) || key.startsWith(w.sort_title));
+      const sameAuthor = names.length && surnames(w.authors).some((n) => names.includes(n));
+      return { ...w, score: (sameTitle ? 2 : 0) + (sameAuthor ? 1 : 0) };
+    })
+    .filter((w) => w.score > 0)
+    .sort((a, b) => b.score - a.score || a.sort_title.localeCompare(b.sort_title))
+    .slice(0, limit);
+}
+
 export function removeReading(userId, workId) {
   db.prepare('DELETE FROM readings WHERE user_id = ? AND work_id = ?').run(userId, workId);
 }
@@ -117,26 +223,46 @@ export function deleteWork(workId) {
   return covers;
 }
 
-// Bibliothèque personnelle, filtrable par statut et par recherche texte
-export function listLibrary(userId, { status = null, q = null } = {}) {
+export const SORTS = [
+  { value: 'titre', label: 'Titre' },
+  { value: 'recent', label: 'Ajout récent' },
+  { value: 'note', label: 'Ma note' },
+  { value: 'fin', label: 'Date de lecture' },
+];
+const ORDER_BY = {
+  titre: 'w.sort_title COLLATE NOCASE',
+  recent: 'COALESCE(r.updated_at, w.created_at) DESC',
+  note: 'rv.rating IS NULL, rv.rating DESC, w.sort_title COLLATE NOCASE',
+  fin: 'r.finished_on IS NULL, r.finished_on DESC, w.sort_title COLLATE NOCASE',
+};
+
+// Bibliothèque personnelle (ou tout le catalogue commun avec scope = 'tous'),
+// filtrable par statut, genre et recherche texte
+export function listLibrary(userId, { scope = 'moi', status = null, genreId = null, q = null, sort = 'titre' } = {}) {
   const params = { userId };
-  let where = 'r.user_id = @userId';
+  const where = [scope === 'tous' ? '1' : 'r.id IS NOT NULL'];
   if (status && STATUS_LABELS[status]) {
-    where += ' AND r.status = @status';
+    where.push('r.status = @status');
     params.status = status;
   }
+  if (genreId) {
+    where.push('w.genre_id = @genreId');
+    params.genreId = genreId;
+  }
   if (q) {
-    where += ' AND (w.title LIKE @q OR w.authors LIKE @q OR e.isbn LIKE @q)';
+    where.push(`(w.title LIKE @q OR w.authors LIKE @q
+      OR EXISTS (SELECT 1 FROM editions x WHERE x.work_id = w.id AND (x.isbn LIKE @q OR x.edition_title LIKE @q)))`);
     params.q = `%${q}%`;
   }
   return db.prepare(`
-    SELECT w.id, w.title, w.sort_title, w.authors, r.status, r.updated_at,
+    SELECT w.id, w.title, w.sort_title, w.authors, r.status, r.finished_on, rv.rating,
       COALESCE(e.cover_file, (SELECT cover_file FROM editions WHERE work_id = w.id AND cover_file IS NOT NULL LIMIT 1)) AS cover_file
-    FROM readings r
-    JOIN works w ON w.id = r.work_id
+    FROM works w
+    LEFT JOIN readings r ON r.work_id = w.id AND r.user_id = @userId
+    LEFT JOIN reviews rv ON rv.work_id = w.id AND rv.user_id = @userId
     LEFT JOIN editions e ON e.id = r.edition_id
-    WHERE ${where}
-    ORDER BY w.sort_title COLLATE NOCASE
+    WHERE ${where.join(' AND ')}
+    ORDER BY ${ORDER_BY[sort] || ORDER_BY.titre}
   `).all(params);
 }
 
@@ -149,4 +275,16 @@ export function libraryCounts(userId) {
 
 export function listGenres() {
   return db.prepare('SELECT id, name FROM genres ORDER BY position, name').all();
+}
+
+// Pour le script de récupération des couvertures manquantes
+export function editionsWithoutCover() {
+  return db.prepare(`
+    SELECT e.id, e.isbn, w.title FROM editions e JOIN works w ON w.id = e.work_id
+    WHERE e.cover_file IS NULL AND e.isbn IS NOT NULL ORDER BY e.id
+  `).all();
+}
+
+export function setEditionCover(editionId, coverFile) {
+  db.prepare('UPDATE editions SET cover_file = ? WHERE id = ?').run(coverFile, editionId);
 }

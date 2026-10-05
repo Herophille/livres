@@ -1,5 +1,6 @@
 import { XMLParser } from 'fast-xml-parser';
 import { fetchWithTimeout, toIso6391 } from './http.js';
+import { isbn13to10 } from '../../lib/isbn.js';
 
 const parser = new XMLParser({ removeNSPrefix: true, ignoreAttributes: true, textNodeName: '#text' });
 
@@ -13,15 +14,27 @@ export function parseBnfCreator(raw) {
   return first ? `${first} ${last}` : last;
 }
 
+// "Le petit prince / Antoine de Saint-Exupéry ; avec…" -> "Le petit prince"
+// "Dune (Trad. revue et corrigée) Frank Herbert ; traduit…" -> "Dune"
+export function cleanBnfTitle(raw, authors = []) {
+  let title = raw.split(' / ')[0];
+  for (const name of authors) {
+    const idx = title.indexOf(name);
+    // Sans " / ", la mention d'édition entre parenthèses précède le nom de l'auteur
+    if (idx > 0) title = title.slice(0, idx).replace(/\s*\([^)]*\)\s*$/, '');
+  }
+  return title.split(' ; ')[0].trim() || raw.trim();
+}
+
 // Extrait les champs utiles d'une notice Dublin Core de la BnF
 export function parseBnfRecord(dc) {
-  const titleRaw = text(asArray(dc.title)[0]);
-  const title = titleRaw ? String(titleRaw).split(' / ')[0].trim() : null;
-
   // On ne garde que les auteurs du texte (pas traducteurs, illustrateurs…)
   const creators = asArray(dc.creator).map(text).filter(Boolean);
   const authors = creators.filter((c) => /auteur du texte/i.test(c));
   const chosen = (authors.length ? authors : creators).map(parseBnfCreator);
+
+  const titleRaw = text(asArray(dc.title)[0]);
+  const title = titleRaw ? cleanBnfTitle(String(titleRaw), chosen) : null;
 
   const formats = asArray(dc.format).map(text).join(' ');
   const pages = formats.match(/(\d+)\s*p\./);
@@ -42,7 +55,11 @@ export function parseBnfRecord(dc) {
 }
 
 export async function lookupBnf(isbn) {
-  const query = encodeURIComponent(`bib.isbn all "${isbn}"`);
+  // Les notices anciennes ne connaissent que l'ISBN-10 : on cherche les deux formes
+  const isbn10 = isbn13to10(isbn);
+  const query = encodeURIComponent(
+    isbn10 ? `bib.isbn all "${isbn}" or bib.isbn all "${isbn10}"` : `bib.isbn all "${isbn}"`,
+  );
   const url = `https://catalogue.bnf.fr/api/SRU?version=1.2&operation=searchRetrieve&query=${query}&recordSchema=dublincore&maximumRecords=1`;
   const res = await fetchWithTimeout(url);
   if (!res.ok) return null;

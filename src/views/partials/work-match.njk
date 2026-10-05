@@ -1,0 +1,28 @@
+{# Livres déjà au catalogue qui ressemblent à celui qu'on ajoute : on peut y rattacher
+   cette édition (ou traduction) pour partager les avis au lieu de créer un doublon. #}
+<div id="work-match" hx-get="/ajouter/correspondances" hx-swap="outerHTML"
+     hx-trigger="change from:#title-input, change from:#authors-input"
+     hx-include="#title-input, #authors-input, [name=work_id]:checked">
+{% if similar and similar.length %}
+  <fieldset class="group">
+    <legend>Déjà dans le catalogue ?</legend>
+    <p class="hint hint--top">Si c'est une autre édition ou une traduction d'un de ces livres, choisissez-le : les avis seront partagés entre les éditions.</p>
+    <div class="matches">
+      <label class="match">
+        <input type="radio" name="work_id" value="" {% if not values.work_id %}checked{% endif %}>
+        <span class="match__text"><span class="match__title">Non, c'est un autre livre</span></span>
+      </label>
+      {% for w in similar %}
+      <label class="match">
+        <input type="radio" name="work_id" value="{{ w.id }}" {% if values.work_id == w.id | string %}checked{% endif %}>
+        <span class="match__cover">{% set book = w %}{% set thumb = true %}{% include "partials/cover.njk" %}</span>
+        <span class="match__text">
+          <span class="match__title">{{ w.title }}</span>
+          <span class="match__meta">{{ w.authors }}{% if w.edition_count > 1 %} · {{ w.edition_count }} éditions{% endif %}</span>
+        </span>
+      </label>
+      {% endfor %}
+    </div>
+  </fieldset>
+{% endif %}
+</div>

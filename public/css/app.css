@@ -168,7 +168,7 @@ img { max-width: 100%; }
 
 .toolbar {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
   margin-bottom: 16px;
 }
@@ -410,6 +410,8 @@ img { max-width: 100%; }
 .segmented__item { overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 420px) { .segmented__item { font-size: 12px; letter-spacing: -0.01em; } }
 .segmented__item.is-on { background: var(--accent); color: var(--on-accent); font-weight: 600; }
+.segmented--2 { grid-template-columns: 1fr 1fr; }
+a.segmented__item { display: block; text-align: center; font-size: 14px; text-decoration: none !important; }
 .link-button {
   display: block;
   margin: 10px auto 0;
@@ -451,6 +453,7 @@ img { max-width: 100%; }
   border: 0;
   background: var(--surface);
   border-radius: var(--radius-m);
+  min-width: 0; /* un fieldset s'élargit sinon à la taille de son contenu */
 }
 .group legend {
   float: left;
@@ -461,6 +464,8 @@ img { max-width: 100%; }
   font-weight: 700;
 }
 .group legend + * { clear: both; }
+/* Légendes discrètes à l'intérieur d'une carte (note, recommandation) */
+.group .field-label:is(legend) { float: none; margin: 0 0 5px; font-size: 14px; font-weight: 400; color: var(--text-2); }
 
 .field { display: block; margin-bottom: 14px; }
 .field:last-child { margin-bottom: 0; }
@@ -469,7 +474,7 @@ img { max-width: 100%; }
 .field-row .field { margin: 0; }
 
 /* :where() garde une spécificité nulle, les composants peuvent surcharger */
-input:where(:not([type=radio], [type=checkbox], [type=file])), select {
+input:where(:not([type=radio], [type=checkbox], [type=file])), select, textarea {
   width: 100%;
   height: 44px;
   padding: 0 12px;
@@ -480,6 +485,7 @@ input:where(:not([type=radio], [type=checkbox], [type=file])), select {
   font: inherit;
   font-size: 16px; /* évite le zoom automatique sur iOS */
 }
+textarea { height: auto; min-height: 120px; padding: 10px 12px; line-height: 1.45; resize: vertical; }
 input[aria-invalid=true] { border-color: var(--danger); }
 .search input { border: 0; padding: 0; height: 38px; background: transparent; }
 .field-error { margin: 6px 0 0; color: var(--danger); font-size: 14px; }
@@ -510,6 +516,30 @@ input[aria-invalid=true] { border-color: var(--danger); }
 @media (min-width: 900px) { .form-actions { bottom: 16px; } }
 
 .cover-field { display: flex; align-items: center; gap: 16px; }
+.cover-field__buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.cover-field__buttons .button { white-space: normal; text-align: center; }
+.when-busy { display: none; }
+.htmx-request .when-idle { display: none; }
+.htmx-request .when-busy { display: inline; }
+
+/* Couvertures proposées : rangée défilante, celle choisie est entourée */
+.cover-choices:not(:empty) { margin-bottom: 16px; }
+.cover-options {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  margin: 0 -16px;
+  padding: 4px 16px 6px;
+  scrollbar-width: none;
+}
+.cover-options::-webkit-scrollbar { display: none; }
+.cover-option { flex: none; width: 92px; cursor: pointer; text-align: center; }
+.cover-option input { position: absolute; opacity: 0; pointer-events: none; }
+.cover-option .cover { outline: 3px solid transparent; outline-offset: 2px; }
+.cover-option:has(input:checked) .cover { outline-color: var(--accent); }
+.cover-option:has(input:focus-visible) .cover { outline-color: var(--accent); outline-style: dashed; }
+.cover-option__label { display: block; margin-top: 6px; font-size: 13px; color: var(--text-2); }
+.cover-option:has(input:checked) .cover-option__label { color: var(--accent); font-weight: 600; }
 .cover--preview { width: 84px; flex: none; }
 .cover--empty { background: var(--bg); border: 1.5px dashed var(--line); box-shadow: none; }
 
@@ -523,6 +553,7 @@ input[aria-invalid=true] { border-color: var(--danger); }
 .notice--error { background: color-mix(in srgb, var(--danger) 14%, transparent); }
 
 .hint { margin: 10px 0 0; color: var(--text-2); font-size: 15px; }
+.hint--top { margin: 0 0 12px; }
 .hint.is-error { color: var(--danger); }
 .center { text-align: center; }
 
@@ -561,3 +592,98 @@ input[aria-invalid=true] { border-color: var(--danger); }
 
 /* Pastilles posées sur une carte blanche : fond contrasté */
 .group .chip:not(:has(input:checked)) { background: var(--bg); }
+
+/* ---------- Phase 2 : filtres, avis, dates, éditions ---------- */
+
+.scope { margin-bottom: 12px; }
+
+.filters { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.filter select {
+  height: 38px;
+  border: 0;
+  background-color: var(--surface);
+  font-size: 15px;
+}
+
+/* Note affichée (lecture seule) */
+.stars { font-size: 12px; letter-spacing: 1px; color: var(--line); line-height: 1.3; }
+.stars .is-on { color: var(--st-en_pause); }
+
+.group-title, .section-title { margin: 0 0 12px; font-size: 20px; font-weight: 700; }
+.section-title { margin-top: 8px; }
+
+.review { margin-bottom: 24px; }
+.review fieldset { border: 0; margin: 0 0 14px; padding: 0; }
+
+/* Saisie de la note : 5 étoiles, ordre inversé dans le HTML puis remis à l'endroit */
+.rating-input { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; }
+.rating-input legend { width: 100%; }
+.rating-input__stars { display: inline-flex; flex-direction: row-reverse; }
+.rating-input__stars input { position: absolute; opacity: 0; pointer-events: none; }
+.rating-input__stars label {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: var(--line);
+}
+.rating-input__stars label::before { content: "★"; font-size: 32px; line-height: 1; }
+.rating-input__stars input:checked ~ label,
+.rating-input__stars label:hover,
+.rating-input__stars label:hover ~ label { color: var(--st-en_pause); }
+.rating-input__stars input:focus-visible + label { outline: 3px solid var(--accent); border-radius: 6px; }
+.rating-input__clear { font-size: 15px; color: var(--text-2); cursor: pointer; }
+.rating-input__clear input { position: absolute; opacity: 0; pointer-events: none; }
+.rating-input__clear:has(input:checked) { display: none; }
+.rating-input__clear:has(input:focus-visible) { outline: 3px solid var(--accent); }
+
+.review__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.review__actions .link-button { margin: 0; }
+.review__actions .hint { margin: 0; }
+
+/* Dates de lecture, sous le sélecteur de statut */
+.dates { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+.dates .field { margin: 0; }
+.dates input { background: var(--surface); }
+.status-picker .field-error { margin-top: 6px; }
+
+/* Rattachement à une œuvre existante */
+.matches { display: grid; gap: 8px; }
+.match {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: var(--radius-s);
+  background: var(--bg);
+  cursor: pointer;
+}
+.match input { accent-color: var(--accent); width: 20px; height: 20px; flex: none; margin: 0; }
+.match:has(input:checked) { background: var(--accent-soft); }
+.match__cover { width: 32px; flex: none; }
+.match__cover .cover { border-radius: 2px; box-shadow: none; }
+.match__cover .cover__title, .match__cover .cover__author, .match__cover .cover--blank::after { display: none; }
+.match__text { min-width: 0; display: flex; flex-direction: column; }
+.match__title { font-weight: 600; }
+.match__meta { font-size: 14px; color: var(--text-2); }
+
+/* Éditions d'une même œuvre */
+.editions { margin-bottom: 24px; }
+.editions .booklist__row { padding-right: 12px; }
+.editions form { margin: 0; }
+.badge {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+}
+.button--small { min-height: 34px; padding: 0 12px; font-size: 14px; }
+
+/* Les boutons radio masqués (position: absolute) restent dans leur étiquette,
+   sinon ils élargissent la page et provoquent un défilement horizontal sur mobile */
+.chip, .viewswitch label, .cover-option, .rating-input__stars, .rating-input__clear { position: relative; }

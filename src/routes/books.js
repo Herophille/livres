@@ -1,10 +1,12 @@
 import {
   parseBookForm, createBook, updateBook, getBook, findWorkIdByIsbn, isIsbnTaken,
-  setReadingStatus, removeReading, deleteWork, listGenres,
+  changeReadingStatus, removeReading, deleteWork, listGenres, setReadingDates, setReadingEdition,
+  saveReview, deleteReview, findSimilarWorks,
 } from '../lib/books.js';
 import { normalizeIsbn } from '../lib/isbn.js';
 import { STATUSES, STATUS_LABELS, FORMATS, LANGUAGES, COUNTRIES } from '../lib/labels.js';
 import { lookupIsbn } from '../services/metadata/index.js';
+import { findCovers } from '../services/metadata/covers.js';
 import { saveCover, saveCoverFromUrl, deleteCover } from '../services/covers.js';
 
 // Listes nécessaires au formulaire livre
@@ -20,6 +22,12 @@ async function coverFromRequest(body) {
   if (body.cover_url) return { file: await saveCoverFromUrl(String(body.cover_url)), uploaded: false };
   return { file: null, uploaded: false };
 }
+
+// Pour les requêtes htmx on renvoie un fragment, sinon on revient sur la page du livre
+const isHtmx = (req) => Boolean(req.headers['hx-request']);
+
+// Proposition de couverture à réafficher après une erreur de saisie
+const coversFromBody = (body) => (body.cover_url ? [{ url: String(body.cover_url), source: '' }] : []);
 
 function parseId(raw) {
   const id = parseInt(raw, 10);
@@ -43,17 +51,19 @@ export default async function bookRoutes(app) {
     if (existing) return reply.redirect(`/livres/${existing}?existant=1`);
 
     const found = await lookupIsbn(isbn);
-    const values = found
+    const covers = found?.covers || [];
+    const values = found?.title
       ? {
         isbn, title: found.title, authors: found.authors, publisher: found.publisher,
         published_date: found.publishedDate, page_count: found.pageCount, language: found.language,
-        original_language: found.language, cover_url: found.coverUrl, status: 'a_lire',
+        original_language: found.language, cover_url: covers[0]?.url, status: 'a_lire',
       }
-      : { isbn, status: 'a_lire' };
+      : { isbn, cover_url: covers[0]?.url, status: 'a_lire' };
 
     return reply.viewAsync('form.njk', {
-      title: 'Ajouter un livre', mode: 'create', values, ...formOptions(),
-      notice: found
+      title: 'Ajouter un livre', mode: 'create', values, covers, ...formOptions(),
+      similar: findSimilarWorks(values),
+      notice: found?.title
         ? `Informations trouvées via ${found.sources.join(', ')}. Vérifiez-les et complétez le genre et le pays.`
         : 'Aucune information trouvée pour cet ISBN. Complétez la fiche à la main.',
     });
@@ -62,6 +72,12 @@ export default async function bookRoutes(app) {
   app.get('/ajouter/manuel', async (req, reply) => reply.viewAsync('form.njk', {
     title: 'Ajouter un livre', mode: 'create', values: { status: 'a_lire' }, ...formOptions(),
   }));
+
+  // Œuvres ressemblantes, rafraîchies quand on modifie le titre ou les auteurs
+  app.get('/ajouter/correspondances', async (req, reply) => {
+    const values = { title: String(req.query.title || ''), authors: String(req.query.authors || ''), work_id: req.query.work_id };
+    return reply.viewAsync('partials/work-match.njk', { similar: findSimilarWorks(values), values });
+  });
 
   app.post('/livres', async (req, reply) => {
     const body = req.body || {};
@@ -73,6 +89,7 @@ export default async function bookRoutes(app) {
     if (Object.keys(errors).length) {
       return reply.code(422).viewAsync('form.njk', {
         title: 'Ajouter un livre', mode: 'create', values, errors, ...formOptions(),
+        covers: coversFromBody(body), similar: findSimilarWorks(values),
       });
     }
 
@@ -97,11 +114,49 @@ export default async function bookRoutes(app) {
 
     const status = String(req.body?.status || '');
     if (status === 'retirer') removeReading(req.user.id, book.work.id);
-    else if (STATUS_LABELS[status]) setReadingStatus(req.user.id, book.work.id, status, book.edition?.id);
+    else if (STATUS_LABELS[status]) changeReadingStatus(req.user.id, book.work.id, status, book.edition?.id);
     else return reply.code(400).send('Statut inconnu');
 
+    if (!isHtmx(req)) return reply.redirect(`/livres/${book.work.id}`);
     const updated = getBook(book.work.id, req.user.id);
     return reply.viewAsync('partials/status.njk', { work: updated.work, reading: updated.reading, statuses: STATUSES });
+  });
+
+  app.post('/livres/:id/dates', async (req, reply) => {
+    const book = getBook(parseId(req.params.id), req.user.id);
+    if (!book?.reading) return reply.callNotFound();
+    const dateError = setReadingDates(req.user.id, book.work.id, req.body?.started_on, req.body?.finished_on);
+
+    if (!isHtmx(req)) return reply.redirect(`/livres/${book.work.id}`);
+    const updated = getBook(book.work.id, req.user.id);
+    return reply.viewAsync('partials/status.njk', {
+      work: updated.work, reading: updated.reading, statuses: STATUSES, dateError,
+    });
+  });
+
+  app.post('/livres/:id/edition', async (req, reply) => {
+    const book = getBook(parseId(req.params.id), req.user.id);
+    if (!book) return reply.callNotFound();
+    setReadingEdition(req.user.id, book.work.id, parseId(req.body?.edition_id));
+    return reply.redirect(`/livres/${book.work.id}`);
+  });
+
+  app.post('/livres/:id/avis', async (req, reply) => {
+    const book = getBook(parseId(req.params.id), req.user.id);
+    if (!book) return reply.callNotFound();
+    if (req.body?.action === 'supprimer') deleteReview(req.user.id, book.work.id);
+    else saveReview(req.user.id, book.work.id, req.body || {});
+
+    if (!isHtmx(req)) return reply.redirect(`/livres/${book.work.id}`);
+    const updated = getBook(book.work.id, req.user.id);
+    return reply.viewAsync('partials/review.njk', { work: updated.work, review: updated.review, saved: true });
+  });
+
+  // Couvertures trouvées en ligne pour l'ISBN saisi (formulaire de modification)
+  app.get('/livres/:id/couvertures', async (req, reply) => {
+    const isbn = normalizeIsbn(String(req.query.isbn || ''));
+    const covers = isbn ? await findCovers(isbn) : [];
+    return reply.viewAsync('partials/cover-choices.njk', { covers, mode: 'edit', searched: true, hasIsbn: Boolean(isbn) });
   });
 
   app.get('/livres/:id/modifier', async (req, reply) => {
@@ -128,6 +183,7 @@ export default async function bookRoutes(app) {
       return reply.code(422).viewAsync('form.njk', {
         title: `Modifier « ${book.work.title} »`, mode: 'edit', workId: book.work.id,
         currentCover: book.edition?.cover_file, values: { ...body, cover: undefined }, errors, ...formOptions(),
+        covers: coversFromBody(body),
       });
     }
 

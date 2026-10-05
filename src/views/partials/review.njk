@@ -1,0 +1,37 @@
+{# Mon avis sur l'œuvre : partagé entre toutes ses éditions et traductions #}
+<section id="review" class="group review" aria-labelledby="review-title">
+  <h2 id="review-title" class="group-title">Mon avis</h2>
+  <form method="post" action="/livres/{{ work.id }}/avis" hx-post="/livres/{{ work.id }}/avis" hx-target="#review" hx-swap="outerHTML">
+    <fieldset class="rating-input">
+      <legend class="field-label">Note</legend>
+      <div class="rating-input__stars">
+        {# Ordre inversé dans le code, remis à l'endroit en CSS : permet de colorer les étoiles précédentes #}
+        {% for n in [5, 4, 3, 2, 1] %}
+        <input type="radio" id="rating-{{ n }}" name="rating" value="{{ n }}" {% if review and review.rating == n %}checked{% endif %}>
+        <label for="rating-{{ n }}" title="{{ n }} sur 5"><span class="visually-hidden">{{ n }} étoile{{ 's' if n > 1 }}</span></label>
+        {% endfor %}
+      </div>
+      <label class="rating-input__clear"><input type="radio" name="rating" value="0" {% if not review or not review.rating %}checked{% endif %}>Sans note</label>
+    </fieldset>
+
+    <fieldset class="recommend">
+      <legend class="field-label">Je le recommande</legend>
+      <div class="chips chips--wrap">
+        <label class="chip"><input type="radio" name="recommends" value="oui" {% if review and review.recommends === 1 %}checked{% endif %}>Oui</label>
+        <label class="chip"><input type="radio" name="recommends" value="non" {% if review and review.recommends === 0 %}checked{% endif %}>Non</label>
+        <label class="chip"><input type="radio" name="recommends" value="" {% if not review or review.recommends === null %}checked{% endif %}>Sans avis</label>
+      </div>
+    </fieldset>
+
+    <label class="field">
+      <span class="field-label">Critique</span>
+      <textarea name="body" rows="5" maxlength="10000" placeholder="Ce que vous en avez pensé…">{{ review.body if review and review.body else '' }}</textarea>
+    </label>
+
+    <div class="review__actions">
+      <button type="submit" class="button">Enregistrer</button>
+      {% if review %}<button type="submit" name="action" value="supprimer" class="link-button">Supprimer mon avis</button>{% endif %}
+      {% if saved %}<span class="hint" role="status">{{ 'Avis enregistré.' if review else 'Avis supprimé.' }}</span>{% endif %}
+    </div>
+  </form>
+</section>

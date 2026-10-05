@@ -16,32 +16,41 @@
 
   <fieldset class="group">
     <legend>Couverture</legend>
+    {% include "partials/cover-choices.njk" %}
     <div class="cover-field">
       {% if currentCover %}
         <img class="cover cover--preview" src="/couvertures/{{ currentCover }}_t.webp" alt="Couverture actuelle">
-      {% elif values.cover_url %}
-        <img class="cover cover--preview" src="{{ values.cover_url }}" alt="Couverture trouvée" referrerpolicy="no-referrer">
-        <input type="hidden" name="cover_url" value="{{ values.cover_url }}">
-      {% else %}
+      {% elif not covers or not covers.length %}
         <div class="cover cover--preview cover--empty" aria-hidden="true"></div>
       {% endif %}
-      <label class="button button--quiet">
-        {{ 'Remplacer la couverture' if currentCover or values.cover_url else 'Ajouter une couverture' }}
-        <input type="file" name="cover" accept="image/*" class="visually-hidden">
-      </label>
+      <div class="cover-field__buttons">
+        <label class="button button--quiet">
+          Photographier ou choisir une image
+          <input type="file" name="cover" accept="image/*" class="visually-hidden">
+        </label>
+        {% if mode == 'edit' %}
+        <button type="button" class="button button--quiet"
+                hx-get="/livres/{{ workId }}/couvertures" hx-include="[name=isbn]"
+                hx-target="#cover-choices" hx-swap="outerHTML" hx-disabled-elt="this">
+          <span class="when-idle">Chercher en ligne</span><span class="when-busy">Recherche…</span>
+        </button>
+        {% endif %}
+      </div>
     </div>
   </fieldset>
+
+  {% if mode == 'create' %}{% include "partials/work-match.njk" %}{% endif %}
 
   <fieldset class="group">
     <legend>L'œuvre</legend>
     <label class="field">
       <span class="field-label">Titre</span>
-      <input name="title" value="{{ values.title or '' }}" required {{ invalid('title') }}>
+      <input id="title-input" name="title" value="{{ values.title or '' }}" required {{ invalid('title') }}>
       {{ err('title') }}
     </label>
     <label class="field">
       <span class="field-label">Auteurs</span>
-      <input name="authors" value="{{ values.authors or '' }}" placeholder="Séparés par des virgules">
+      <input id="authors-input" name="authors" value="{{ values.authors or '' }}" placeholder="Séparés par des virgules">
     </label>
     <label class="field">
       <span class="field-label">Genre</span>

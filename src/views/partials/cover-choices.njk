@@ -1,0 +1,22 @@
+{# Couvertures trouvées en ligne : l'utilisateur choisit celle qui correspond à son édition #}
+<div id="cover-choices" class="cover-choices">
+{% if covers and covers.length %}
+  <p class="field-label">Couvertures trouvées en ligne</p>
+  <div class="cover-options" role="radiogroup" aria-label="Couvertures trouvées en ligne">
+    {% for c in covers %}
+    <label class="cover-option">
+      <input type="radio" name="cover_url" value="{{ c.url }}" {% if values and values.cover_url == c.url %}checked{% endif %}>
+      <img class="cover" src="{{ c.url }}" alt="" referrerpolicy="no-referrer" loading="lazy">
+      <span class="cover-option__label">{{ c.source or 'Choisie' }}</span>
+    </label>
+    {% endfor %}
+    <label class="cover-option">
+      <input type="radio" name="cover_url" value="" {% if not values or not values.cover_url %}checked{% endif %}>
+      <span class="cover cover--empty"></span>
+      <span class="cover-option__label">{{ 'Ne pas changer' if mode == 'edit' else 'Aucune' }}</span>
+    </label>
+  </div>
+{% elif searched %}
+  <p class="hint">{{ 'Aucune couverture trouvée en ligne pour cet ISBN. Vous pouvez en photographier une.' if hasIsbn else 'Saisissez un ISBN valide pour chercher une couverture en ligne.' }}</p>
+{% endif %}
+</div>

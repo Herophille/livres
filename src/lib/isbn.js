@@ -31,3 +31,13 @@ function isbn13CheckDigit(first12) {
 function isValidIsbn13(s) {
   return isbn13CheckDigit(s.slice(0, 12)) === s[12];
 }
+
+// ISBN-13 en 978 vers ISBN-10 (les 979 n'ont pas d'équivalent), ou null
+export function isbn13to10(isbn13) {
+  if (!/^978\d{10}$/.test(isbn13 || '')) return null;
+  const core = isbn13.slice(3, 12);
+  let sum = 0;
+  for (let i = 0; i < 9; i++) sum += Number(core[i]) * (10 - i);
+  const check = (11 - (sum % 11)) % 11;
+  return core + (check === 10 ? 'X' : String(check));
+}

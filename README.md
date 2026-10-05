@@ -76,6 +76,20 @@ rm -f data/livres.db-wal data/livres.db-shm
 docker compose start livres
 ```
 
+## Covers
+
+When a book is added by ISBN, the app looks for covers on Decitre, Open Library, Amazon and Google Books and lets you pick one. On the edit form, *Chercher en ligne* does the same for an existing book.
+
+To fetch covers for every book that has an ISBN but no cover yet (for example books added before this feature):
+
+```sh
+docker compose exec -u node livres npm run couvertures
+```
+
+Keep `-u node`: otherwise the files are created as root and the app can't replace them later.
+
+Google Books without an API key shares a worldwide anonymous quota and is often refused. A free key (Google Cloud console, "Books API") goes in `GOOGLE_BOOKS_API_KEY`.
+
 ## Updating
 
 Replace the files (or `git pull`), then:

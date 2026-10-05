@@ -22,6 +22,7 @@
       {% if work.country_code %}<div><dt>Pays de première publication</dt><dd>{{ work.country_code | countryLabel }}</dd></div>{% endif %}
       {% if work.original_language %}<div><dt>Langue originale</dt><dd>{{ work.original_language | languageLabel }}</dd></div>{% endif %}
       {% if edition %}
+        {% if edition.edition_title %}<div><dt>Titre de cette édition</dt><dd>{{ edition.edition_title }}</dd></div>{% endif %}
         {% if edition.language %}<div><dt>Langue de cette édition</dt><dd>{{ edition.language | languageLabel }}</dd></div>{% endif %}
         {% if edition.format %}<div><dt>Format</dt><dd>{{ edition.format | formatLabel }}</dd></div>{% endif %}
         {% if edition.page_count %}<div><dt>Pages</dt><dd>{{ edition.page_count }}</dd></div>{% endif %}
@@ -30,6 +31,35 @@
         {% if edition.isbn %}<div><dt>ISBN</dt><dd class="tabular">{{ edition.isbn }}</dd></div>{% endif %}
       {% endif %}
     </dl>
+
+    {% include "partials/review.njk" %}
+
+    {% if editions.length > 1 %}
+    <section class="editions" aria-labelledby="editions-title">
+      <h2 id="editions-title" class="section-title">{{ editions.length }} éditions</h2>
+      <ul class="booklist">
+        {% for e in editions %}
+        <li>
+          <div class="booklist__row">
+            <span class="booklist__cover">{% set book = { title: e.edition_title or work.title, cover_file: e.cover_file } %}{% set thumb = true %}{% include "partials/cover.njk" %}</span>
+            <span class="booklist__text">
+              <span class="booklist__title">{{ e.edition_title or work.title }}</span>
+              <span class="booklist__author">{{ [e.language | languageLabel, e.format | formatLabel, e.publisher, e.published_date | truncate(4, true, '')] | select | join(' · ') }}</span>
+            </span>
+            {% if e.id == edition.id %}
+              <span class="badge">{{ 'Mon édition' if reading else 'Affichée' }}</span>
+            {% elif reading %}
+              <form method="post" action="/livres/{{ work.id }}/edition">
+                <input type="hidden" name="edition_id" value="{{ e.id }}">
+                <button type="submit" class="button button--quiet button--small">C'est la mienne</button>
+              </form>
+            {% endif %}
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
 
     <div class="actions">
       <a class="button button--quiet" href="/livres/{{ work.id }}/modifier">Modifier la fiche</a>

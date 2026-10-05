@@ -10,10 +10,37 @@
         {% endfor %}
       </div>
     </fieldset>
-    {% if reading %}
-      <button type="submit" name="status" value="retirer" class="link-button">Retirer de ma bibliothèque</button>
-    {% else %}
+    {% if not reading %}
       <p class="hint">Ce livre n'est pas dans votre bibliothèque. Choisissez un statut pour l'ajouter.</p>
     {% endif %}
   </form>
+
+  {% if reading %}
+    {# Dates facultatives : début dès qu'on a commencé, fin une fois lu ou abandonné #}
+    {% set showStart = reading.status != 'a_lire' or reading.started_on %}
+    {% set showEnd = reading.status in ['lu', 'abandonne'] or reading.finished_on %}
+    {% if showStart or showEnd %}
+    <form class="dates" method="post" action="/livres/{{ work.id }}/dates"
+          hx-post="/livres/{{ work.id }}/dates" hx-target="#status" hx-swap="outerHTML" hx-trigger="change">
+      {% if showStart %}
+      <label class="field">
+        <span class="field-label">Commencé le</span>
+        <input type="date" name="started_on" value="{{ reading.started_on or '' }}" {% if dateError %}aria-invalid="true" aria-describedby="date-error"{% endif %}>
+      </label>
+      {% else %}<input type="hidden" name="started_on" value="">{% endif %}
+      {% if showEnd %}
+      <label class="field">
+        <span class="field-label">{{ 'Abandonné le' if reading.status == 'abandonne' else 'Terminé le' }}</span>
+        <input type="date" name="finished_on" value="{{ reading.finished_on or '' }}" {% if dateError %}aria-invalid="true" aria-describedby="date-error"{% endif %}>
+      </label>
+      {% else %}<input type="hidden" name="finished_on" value="">{% endif %}
+      <noscript><button type="submit" class="button button--quiet">Enregistrer les dates</button></noscript>
+    </form>
+    {% if dateError %}<p class="field-error" id="date-error" role="alert">{{ dateError }}</p>{% endif %}
+    {% endif %}
+
+    <form method="post" action="/livres/{{ work.id }}/statut" hx-post="/livres/{{ work.id }}/statut" hx-target="#status" hx-swap="outerHTML">
+      <button type="submit" name="status" value="retirer" class="link-button">Retirer de ma bibliothèque</button>
+    </form>
+  {% endif %}
 </div>

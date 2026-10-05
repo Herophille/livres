@@ -2,8 +2,13 @@
   <div class="empty">
     {% if q %}
       <p>Aucun livre ne correspond à « {{ q }} ».</p>
-    {% elif status %}
+    {% elif status and not genreId %}
       <p>Aucun livre avec le statut « {{ status | statusLabel }} ».</p>
+    {% elif genreId or status %}
+      <p>Aucun livre ne correspond à ces filtres.</p>
+    {% elif scope == 'tous' %}
+      <p>Le catalogue commun est vide.</p>
+      <a class="button" href="/ajouter">Ajouter un premier livre</a>
     {% else %}
       <p>Votre bibliothèque est vide.</p>
       <a class="button" href="/ajouter">Ajouter un premier livre</a>
@@ -18,8 +23,9 @@
         <span class="booklist__text">
           <span class="booklist__title">{{ book.title }}</span>
           <span class="booklist__author">{{ book.authors }}</span>
+          {% if book.rating %}<span class="stars" role="img" aria-label="Noté {{ book.rating }} sur 5">{% for i in range(0, 5) %}<span class="{{ 'is-on' if i < book.rating }}">★</span>{% endfor %}</span>{% endif %}
         </span>
-        <span class="status-dot status-dot--{{ book.status }}" title="{{ book.status | statusLabel }}"></span>
+        {% if book.status %}<span class="status-dot status-dot--{{ book.status }}" title="{{ book.status | statusLabel }}"></span>{% endif %}
       </a>
     </li>
     {% endfor %}

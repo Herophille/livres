@@ -4,7 +4,8 @@
   "description": "Suivi de lectures auto-hébergé",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch src/server.js"
+    "dev": "node --watch src/server.js",
+    "couvertures": "node src/scripts/fill-covers.js"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",

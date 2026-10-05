@@ -3,12 +3,15 @@ document.addEventListener('change', (event) => {
   const input = event.target;
   if (input.name !== 'cover' || !input.files?.[0]) return;
   const field = input.closest('.cover-field');
-  const preview = field?.querySelector('.cover--preview');
-  if (!preview) return;
+  if (!field) return;
   const img = document.createElement('img');
   img.className = 'cover cover--preview';
   img.alt = 'Nouvelle couverture';
   img.src = URL.createObjectURL(input.files[0]);
-  preview.replaceWith(img);
-  field.querySelector('input[name=cover_url]')?.remove();
+  const preview = field.querySelector('.cover--preview');
+  if (preview) preview.replaceWith(img);
+  else field.prepend(img);
+  // La photo envoyée remplace les couvertures trouvées en ligne
+  const choices = document.getElementById('cover-choices');
+  if (choices) choices.hidden = true;
 });

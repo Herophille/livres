@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import sharp from 'sharp';
 import { config } from '../config.js';
 import { fetchWithTimeout } from './metadata/http.js';
+import { isAllowedCoverUrl } from './metadata/covers.js';
 
 const MAX_BYTES = 15 * 1024 * 1024;
 
@@ -24,7 +25,7 @@ export async function saveCover(buffer) {
 }
 
 export async function saveCoverFromUrl(url) {
-  if (!url || !/^https?:\/\//.test(url)) return null;
+  if (!isAllowedCoverUrl(url)) return null;
   try {
     const res = await fetchWithTimeout(url, { timeout: 10000 });
     if (!res.ok) return null;
