@@ -96,16 +96,17 @@ export default async function bookRoutes(app) {
     const cover = await coverFromRequest(body);
     const status = STATUS_LABELS[body.status] ? body.status : null;
     const workId = createBook(data, cover.file, req.user.id, status);
-    return reply.redirect(`/livres/${workId}`);
+    return reply.redirect(`/livres/${workId}?ajoute=1`);
   });
 
   app.get('/livres/:id', async (req, reply) => {
     const book = getBook(parseId(req.params.id), req.user.id);
     if (!book) return reply.callNotFound();
-    return reply.viewAsync('book.njk', {
-      title: book.work.title, ...book, statuses: STATUSES,
-      notice: req.query.existant ? 'Ce livre est déjà dans la bibliothèque commune.' : null,
-    });
+    // Après un ajout (ou un livre déjà présent), on propose d'enchaîner sur le suivant
+    let notice = null;
+    if (req.query.ajoute) notice = 'Livre ajouté.';
+    else if (req.query.existant) notice = 'Ce livre est déjà dans la bibliothèque commune.';
+    return reply.viewAsync('book.njk', { title: book.work.title, ...book, statuses: STATUSES, notice });
   });
 
   app.post('/livres/:id/statut', async (req, reply) => {

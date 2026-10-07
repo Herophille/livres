@@ -4,6 +4,19 @@
   <h1 class="large-title">Bibliothèque</h1>
 </header>
 
+{# Affiché par app.js seulement sur téléphone, hors application installée #}
+<aside id="install-hint" class="install-hint" hidden>
+  <img src="/static/img/icon-180.png" alt="" width="44" height="44">
+  <div class="install-hint__text">
+    <p class="install-hint__title">Ajoutez Livres à votre écran d'accueil</p>
+    <p data-platform="ios">Dans Safari, touchez <strong>Partager</strong> puis <strong>Sur l'écran d'accueil</strong>.</p>
+    <p data-platform="android">Dans le menu <strong>⋮</strong> de Chrome, choisissez <strong>Ajouter à l'écran d'accueil</strong>.</p>
+  </div>
+  <button type="button" class="install-hint__close" aria-label="Masquer ce conseil">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 5 12 10.6 17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6L6.4 19 5 17.6l5.6-5.6L5 6.4z"/></svg>
+  </button>
+</aside>
+
 <nav class="segmented segmented--2 scope" aria-label="Livres affichés">
   <a href="/?vue={{ view }}" class="segmented__item {% if scope == 'moi' %}is-on{% endif %}" {% if scope == 'moi' %}aria-current="page"{% endif %}>Mes livres</a>
   <a href="/?portee=tous&amp;vue={{ view }}" class="segmented__item {% if scope == 'tous' %}is-on{% endif %}" {% if scope == 'tous' %}aria-current="page"{% endif %}>Tous les livres</a>
@@ -16,7 +29,7 @@
   <label class="search">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3a7 7 0 0 1 5.6 11.2l5.1 5.1-1.4 1.4-5.1-5.1A7 7 0 1 1 10 3zm0 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10z"/></svg>
     <span class="visually-hidden">Rechercher</span>
-    <input type="search" name="q" value="{{ q or '' }}" placeholder="Titre, auteur ou ISBN" autocomplete="off">
+    <input type="search" name="q" value="{{ q or '' }}" placeholder="Titre, auteur ou ISBN" autocomplete="off" enterkeyhint="search">
   </label>
   <div class="viewswitch" role="radiogroup" aria-label="Affichage">
     <label title="Grille"><input type="radio" name="vue" value="grille" {% if view == 'grille' %}checked{% endif %}>

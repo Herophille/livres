@@ -100,16 +100,29 @@ app.addHook('preHandler', async (req, reply) => {
 
 app.get('/health', async () => ({ ok: true }));
 
+// Sans HTTPS ni service worker, pas d'installation « PWA » complète :
+// le manifeste sert à « Ajouter à l'écran d'accueil » (icône, nom, plein écran sur iOS)
 app.get('/manifest.webmanifest', async (req, reply) => {
   reply.type('application/manifest+json').send({
+    id: '/',
     name: 'Livres',
     short_name: 'Livres',
-    start_url: '/',
-    display: 'standalone',
-    background_color: '#f6f6f3',
-    theme_color: '#1f4d3f',
+    description: 'Nos lectures, entre amis',
     lang: 'fr',
-    icons: [{ src: '/static/img/icon.svg', sizes: 'any', type: 'image/svg+xml' }],
+    start_url: '/',
+    scope: '/',
+    display: 'standalone',
+    background_color: '#f2f2f5',
+    theme_color: '#f2f2f5',
+    icons: [
+      { src: '/static/img/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { src: '/static/img/icon-512.png', sizes: '512x512', type: 'image/png' },
+      { src: '/static/img/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      { src: '/static/img/icon.svg', sizes: 'any', type: 'image/svg+xml' },
+    ],
+    shortcuts: [
+      { name: 'Ajouter un livre', url: '/ajouter', icons: [{ src: '/static/img/icon-192.png', sizes: '192x192' }] },
+    ],
   });
 });
 

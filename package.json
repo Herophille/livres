@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "couvertures": "node src/scripts/fill-covers.js"
+    "couvertures": "node src/scripts/fill-covers.js",
+    "icones": "node src/scripts/make-icons.js"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",

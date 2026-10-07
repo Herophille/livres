@@ -687,3 +687,125 @@ input[aria-invalid=true] { border-color: var(--danger); }
 /* Les boutons radio masqués (position: absolute) restent dans leur étiquette,
    sinon ils élargissent la page et provoquent un défilement horizontal sur mobile */
 .chip, .viewswitch label, .cover-option, .rating-input__stars, .rating-input__clear { position: relative; }
+
+/* ---------- Phase 3 : finitions mobiles ---------- */
+
+/* Pas de surbrillance grise au toucher : chaque élément a son propre retour visuel */
+html { -webkit-tap-highlight-color: transparent; }
+a, button, label, select, summary { touch-action: manipulation; }
+.tabbar { -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+
+/* Encoches de l'iPhone en mode paysage */
+.page {
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+}
+.tabbar { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+
+/* Retour visuel au toucher */
+@media (hover: none) {
+  .button:active, .segmented__item:active, .chip:active, .scan-button:active { opacity: 0.7; }
+  .grid__item:active .cover, .match:active { opacity: 0.75; }
+  .booklist__row:active { background: var(--bg); }
+  .tab:active, .tab--form button:active { color: var(--text); }
+}
+
+/* Barre de chargement entre deux pages */
+.nav-progress {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 20;
+  height: 3px;
+  pointer-events: none;
+  background: var(--accent);
+  transform-origin: left;
+  transform: scaleX(0);
+  opacity: 0;
+}
+.is-navigating .nav-progress {
+  opacity: 1;
+  animation: nav-progress 8s cubic-bezier(0.1, 0.7, 0.2, 1) forwards;
+}
+@keyframes nav-progress { from { transform: scaleX(0.05); } to { transform: scaleX(0.92); } }
+@media (prefers-reduced-motion: reduce) { .is-navigating .nav-progress { transform: scaleX(1); opacity: 0.6; } }
+
+/* Petite roue d'attente, devant un texte */
+.hint.is-busy::before, .button.is-busy::before {
+  content: "";
+  display: inline-block;
+  flex: none;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  vertical-align: -0.15em;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.hint.is-busy { display: flex; gap: 8px; align-items: baseline; color: var(--text); }
+.hint.is-busy::before { position: relative; top: 0.15em; }
+.button.is-busy { gap: 8px; }
+.button:disabled { cursor: default; }
+.is-busy .when-idle { display: none; }
+.is-busy .when-busy { display: inline; }
+
+/* Page d'ajout */
+.scan-feedback { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+.scan-feedback .hint { margin: 0; }
+.scan-preview {
+  width: 56px;
+  height: 56px;
+  flex: none;
+  object-fit: cover;
+  border-radius: var(--radius-s);
+  background: var(--bg);
+}
+.scan-preview[hidden] { display: none; }
+.scan-gallery {
+  position: relative;
+  display: block;
+  margin-top: 6px;
+  padding: 8px 0 0;
+  color: var(--accent);
+  font-size: 15px;
+  cursor: pointer;
+}
+.scan-gallery:has(input:focus-visible) { outline: 3px solid var(--accent); }
+.add-flow.is-busy .scan-button, .add-flow.is-busy .scan-gallery { opacity: 0.5; pointer-events: none; }
+
+/* Message avec lien d'action (« Livre ajouté. Ajouter un autre livre ») */
+.notice--action { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; }
+.notice--action a { font-weight: 600; }
+
+/* Conseil d'installation sur l'écran d'accueil */
+.install-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 0 16px;
+  padding: 12px 8px 12px 12px;
+  background: var(--surface);
+  border-radius: var(--radius-m);
+  font-size: 15px;
+}
+.install-hint[hidden], .install-hint [hidden] { display: none; }
+.install-hint img { flex: none; border-radius: 10px; }
+.install-hint__text { flex: 1; min-width: 0; }
+.install-hint__text p { margin: 0; color: var(--text-2); }
+.install-hint__text strong { color: var(--text); font-weight: 600; }
+.install-hint .install-hint__title { color: var(--text); font-weight: 600; margin-bottom: 2px; }
+.install-hint__close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin: -4px 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.install-hint__close svg { width: 18px; height: 18px; fill: currentColor; }

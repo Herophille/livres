@@ -2,7 +2,7 @@
 {% block content %}
 <a class="back" href="/">Bibliothèque</a>
 
-{% if notice %}<p class="notice">{{ notice }}</p>{% endif %}
+{% if notice %}<p class="notice notice--action"><span>{{ notice }}</span> <a href="/ajouter">Ajouter un autre livre</a></p>{% endif %}
 
 <article class="book">
   <div class="book__cover">

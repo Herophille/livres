@@ -4,26 +4,37 @@
   <h1 class="large-title">Ajouter un livre</h1>
 </header>
 
-<section class="group">
-  <label class="scan-button">
-    <input id="scan-input" type="file" accept="image/*" capture="environment" class="visually-hidden">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h2v14H3zm3 0h1v14H6zm2 0h2v14H8zm3 0h1v14h-1zm3 0h2v14h-2zm3 0h1v14h-1zm2 0h2v14h-2z"/></svg>
-    <span>Photographier le code-barres</span>
-  </label>
-  <p id="scan-status" class="hint" role="status">Prenez la photo bien à plat, le code-barres au centre.</p>
-</section>
+<div id="add-flow" class="add-flow">
+  <section class="group">
+    <label class="scan-button">
+      <input id="scan-input" type="file" accept="image/*" capture="environment" class="visually-hidden">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h2v14H3zm3 0h1v14H6zm2 0h2v14H8zm3 0h1v14h-1zm3 0h2v14h-2zm3 0h1v14h-1zm2 0h2v14h-2z"/></svg>
+      <span>Photographier le code-barres</span>
+    </label>
+    <div class="scan-feedback">
+      <img id="scan-preview" class="scan-preview" alt="Photo du code-barres" hidden>
+      <p id="scan-status" class="hint" role="status">Prenez la photo bien à plat, le code-barres au centre.</p>
+    </div>
+    <label class="scan-gallery">
+      <input id="scan-gallery" type="file" accept="image/*" class="visually-hidden">
+      Choisir une photo déjà prise
+    </label>
+  </section>
 
-<form id="isbn-form" class="group" method="post" action="/ajouter/isbn">
-  <label for="isbn" class="field-label">Ou tapez l'ISBN</label>
-  <div class="inline-field">
-    <input id="isbn" name="isbn" inputmode="numeric" autocomplete="off" value="{{ isbnValue or '' }}"
-           placeholder="978…" {% if error %}aria-invalid="true" aria-describedby="isbn-error"{% endif %}>
-    <button type="submit" class="button">Rechercher</button>
-  </div>
-  {% if error %}<p id="isbn-error" class="field-error">{{ error }}</p>{% endif %}
-</form>
+  <form id="isbn-form" class="group" method="post" action="/ajouter/isbn">
+    <label for="isbn" class="field-label">Ou tapez l'ISBN</label>
+    <div class="inline-field">
+      <input id="isbn" name="isbn" inputmode="numeric" autocomplete="off" enterkeyhint="search" value="{{ isbnValue or '' }}"
+             placeholder="978…" {% if error %}aria-invalid="true" aria-describedby="isbn-error"{% endif %}>
+      <button type="submit" class="button">
+        <span class="when-idle">Rechercher</span><span class="when-busy">Recherche…</span>
+      </button>
+    </div>
+    {% if error %}<p id="isbn-error" class="field-error">{{ error }}</p>{% endif %}
+  </form>
 
-<p class="center"><a href="/ajouter/manuel">Saisir le livre à la main</a></p>
+  <p class="center"><a href="/ajouter/manuel">Saisir le livre à la main</a></p>
+</div>
 {% endblock %}
 {% block scripts %}
 <script src="/vendor/zxing/index.min.js"></script>
