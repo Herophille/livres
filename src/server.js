@@ -18,6 +18,7 @@ import { scheduleBackups } from './services/backup.js';
 import authRoutes from './routes/auth.js';
 import libraryRoutes from './routes/library.js';
 import bookRoutes from './routes/books.js';
+import userRoutes from './routes/users.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -49,6 +50,14 @@ await app.register(fastifyView, {
       env.addFilter('formatLabel', (v) => FORMAT_LABELS[v] || '');
       env.addFilter('languageLabel', languageLabel);
       env.addFilter('countryLabel', countryLabel);
+      // Date ISO (2024-03-12) en toutes lettres : « 12 mars 2024 »
+      const dateFr = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+      env.addFilter('dateFr', (v) => {
+        const d = v ? new Date(`${String(v).slice(0, 10)}T00:00:00Z`) : null;
+        return d && !Number.isNaN(d.getTime()) ? dateFr.format(d) : '';
+      });
+      // Initiale pour les pastilles d'utilisateur
+      env.addFilter('initial', (s) => String(s || '?').trim().charAt(0).toUpperCase());
       // Teinte stable dérivée du titre, pour les couvertures de remplacement
       env.addFilter('hue', (s) => {
         const h = crypto.createHash('md5').update(String(s || '')).digest();
@@ -129,6 +138,7 @@ app.get('/manifest.webmanifest', async (req, reply) => {
 await app.register(authRoutes);
 await app.register(libraryRoutes);
 await app.register(bookRoutes);
+await app.register(userRoutes);
 
 app.setNotFoundHandler((req, reply) => {
   reply.code(404).view('error.njk', { title: 'Page introuvable', message: "Cette page n'existe pas ou a été supprimée." });

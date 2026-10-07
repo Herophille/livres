@@ -1,0 +1,75 @@
+{% extends "layout.njk" %}
+
+{% macro err(name) %}{% if errors and errors[name] %}<p class="field-error" id="{{ name }}-error">{{ errors[name] }}</p>{% endif %}{% endmacro %}
+{% macro invalid(name) %}{% if errors and errors[name] %}aria-invalid="true" aria-describedby="{{ name }}-error"{% endif %}{% endmacro %}
+
+{% block content %}
+<a class="back" href="/profil">Profil</a>
+<header class="page-head">
+  <h1 class="large-title large-title--small">Comptes</h1>
+</header>
+
+{% if notice %}<p class="notice" role="status">{{ notice }}</p>{% endif %}
+{% if error %}<p class="notice notice--error" role="alert">{{ error }}</p>{% endif %}
+
+<ul class="booklist accounts">
+  {% for u in users %}
+  <li>
+    <details class="account" {% if resetError and resetError.id == u.id %}open{% endif %}>
+      <summary class="booklist__row">
+        <span class="avatar" style="--h: {{ u.username | hue }}" aria-hidden="true">{{ u.display_name | initial }}</span>
+        <span class="booklist__text">
+          <span class="booklist__title">{{ u.display_name }}{% if u.id == currentUser.id %} (vous){% endif %}</span>
+          <span class="booklist__author">@{{ u.username }}{% if u.role == 'admin' %} · admin{% endif %} · {{ u.book_count }} livre{{ 's' if u.book_count > 1 }}</span>
+        </span>
+        <span class="chevron chevron--down" aria-hidden="true"></span>
+      </summary>
+      <div class="account__body">
+        {% if u.id == currentUser.id %}
+          <p class="hint hint--top">Pour changer votre propre mot de passe, passez par votre <a href="/profil">profil</a>.</p>
+        {% else %}
+        <form method="post" action="/admin/comptes/{{ u.id }}/mot-de-passe" class="field">
+          <label for="reset-{{ u.id }}" class="field-label">Nouveau mot de passe pour {{ u.display_name }}</label>
+          <div class="inline-field">
+            <input id="reset-{{ u.id }}" name="password" autocomplete="off" autocapitalize="none" spellcheck="false" minlength="{{ minPassword }}" required
+                   {% if resetError and resetError.id == u.id %}aria-invalid="true" aria-describedby="reset-error-{{ u.id }}"{% endif %}>
+            <button type="submit" class="button button--quiet">Remplacer</button>
+          </div>
+          {% if resetError and resetError.id == u.id %}<p class="field-error" id="reset-error-{{ u.id }}">{{ resetError.message }}</p>{% endif %}
+        </form>
+        <form method="post" action="/admin/comptes/{{ u.id }}/supprimer"
+              data-confirm="Supprimer le compte de {{ u.display_name }} ? Ses lectures et ses avis seront effacés. Les livres restent dans le catalogue commun.">
+          <button type="submit" class="button button--danger button--small">Supprimer ce compte</button>
+        </form>
+        {% endif %}
+      </div>
+    </details>
+  </li>
+  {% endfor %}
+</ul>
+
+<form method="post" action="/admin/comptes" class="group" autocomplete="off">
+  <h2 class="group-title">Nouveau compte</h2>
+  <label class="field">
+    <span class="field-label">Nom d'utilisateur (pour se connecter)</span>
+    <input name="username" value="{{ values.username if values else '' }}" autocapitalize="none" spellcheck="false" required {{ invalid('username') }}>
+    {{ err('username') }}
+  </label>
+  <label class="field">
+    <span class="field-label">Nom affiché</span>
+    <input name="display_name" value="{{ values.display_name if values else '' }}" maxlength="40" placeholder="Par défaut, le nom d'utilisateur" {{ invalid('display_name') }}>
+    {{ err('display_name') }}
+  </label>
+  <label class="field">
+    <span class="field-label">Mot de passe provisoire ({{ minPassword }} caractères minimum)</span>
+    <input name="password" autocomplete="off" autocapitalize="none" spellcheck="false" minlength="{{ minPassword }}" required {{ invalid('password') }}>
+    {{ err('password') }}
+  </label>
+  <label class="check">
+    <input type="checkbox" name="role" value="admin" {% if values and values.role == 'admin' %}checked{% endif %}>
+    Administrateur (peut gérer les comptes et supprimer des livres)
+  </label>
+  <p class="hint hint--top">Communiquez le mot de passe à la personne : elle pourra le changer depuis son profil.</p>
+  <button type="submit" class="button button--wide">Créer le compte</button>
+</form>
+{% endblock %}

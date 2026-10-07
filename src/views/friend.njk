@@ -1,0 +1,43 @@
+{% extends "layout.njk" %}
+{% block content %}
+<a class="back" href="/amis">Amis</a>
+<header class="profile-head">
+  <span class="avatar avatar--large" style="--h: {{ friend.username | hue }}" aria-hidden="true">{{ friend.display_name | initial }}</span>
+  <div>
+    <h1 class="large-title large-title--small">{{ friend.display_name }}</h1>
+    <p class="profile-head__meta">{{ counts.all or 0 }} livre{{ 's' if counts.all > 1 }} · {{ counts.lu or 0 }} lu{{ 's' if counts.lu > 1 }}</p>
+  </div>
+</header>
+
+<form class="toolbar toolbar--friend" method="get" action="/amis/{{ friend.username }}"
+      hx-get="/amis/{{ friend.username }}" hx-target="#shelf" hx-trigger="change" hx-push-url="true">
+  <label class="filter">
+    <span class="visually-hidden">Trier par</span>
+    <select name="tri">
+      {% for s in sorts %}<option value="{{ s.value }}" {% if sort == s.value %}selected{% endif %}>Tri : {{ s.label | lower }}</option>{% endfor %}
+    </select>
+  </label>
+  <div class="viewswitch" role="radiogroup" aria-label="Affichage">
+    <label title="Grille"><input type="radio" name="vue" value="grille" {% if view == 'grille' %}checked{% endif %}>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 0h8v8h-8z"/></svg>
+      <span class="visually-hidden">Grille</span></label>
+    <label title="Liste"><input type="radio" name="vue" value="liste" {% if view == 'liste' %}checked{% endif %}>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18v3H3zm0 6.5h18v3H3zM3 17h18v3H3z"/></svg>
+      <span class="visually-hidden">Liste</span></label>
+  </div>
+
+  <div class="chips" role="radiogroup" aria-label="Filtrer par statut">
+    <label class="chip"><input type="radio" name="statut" value="" {% if not status %}checked{% endif %}>
+      Tous <span class="chip__n">{{ counts.all or 0 }}</span></label>
+    {% for s in statuses %}
+    <label class="chip"><input type="radio" name="statut" value="{{ s.value }}" {% if status == s.value %}checked{% endif %}>
+      {{ s.label }} <span class="chip__n">{{ counts[s.value] or 0 }}</span></label>
+    {% endfor %}
+  </div>
+  <noscript><button type="submit" class="button button--quiet">Filtrer</button></noscript>
+</form>
+
+<section id="shelf" aria-live="polite">
+  {% include "partials/shelf.njk" %}
+</section>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "layout.njk" %}
+{% block content %}
+<header class="profile-head">
+  <span class="avatar avatar--large" style="--h: {{ currentUser.username | hue }}" aria-hidden="true">{{ currentUser.display_name | initial }}</span>
+  <div>
+    <h1 class="large-title large-title--small">{{ currentUser.display_name }}</h1>
+    <p class="profile-head__meta">@{{ currentUser.username }}{% if currentUser.role == 'admin' %} · administrateur{% endif %}</p>
+  </div>
+</header>
+
+{% if notice %}<p class="notice" role="status">{{ notice }}</p>{% endif %}
+
+<ul class="stat-row" aria-label="Ma bibliothèque">
+  <li><a href="/"><strong>{{ counts.all or 0 }}</strong> livre{{ 's' if counts.all > 1 }}</a></li>
+  <li><a href="/?statut=en_cours"><strong>{{ counts.en_cours or 0 }}</strong> en cours</a></li>
+  <li><a href="/?statut=lu"><strong>{{ counts.lu or 0 }}</strong> lu{{ 's' if counts.lu > 1 }}</a></li>
+</ul>
+
+{% if currentUser.role == 'admin' %}
+<nav class="booklist menu" aria-label="Administration">
+  <a class="booklist__row" href="/admin/comptes">
+    <span class="booklist__text"><span class="booklist__title">Gérer les comptes</span>
+      <span class="booklist__author">Créer, réinitialiser ou supprimer un compte</span></span>
+    <span class="chevron" aria-hidden="true"></span>
+  </a>
+</nav>
+{% endif %}
+
+<form method="post" action="/profil/nom" class="group">
+  <h2 class="group-title">Nom affiché</h2>
+  <label class="field">
+    <span class="field-label">Le nom que voient vos amis</span>
+    <input name="display_name" value="{{ nameValue if nameError else currentUser.display_name }}" maxlength="40" required
+           autocomplete="nickname" {% if nameError %}aria-invalid="true" aria-describedby="name-error"{% endif %}>
+    {% if nameError %}<p class="field-error" id="name-error">{{ nameError }}</p>{% endif %}
+  </label>
+  <button type="submit" class="button button--quiet">Enregistrer</button>
+</form>
+
+<form method="post" action="/profil/mot-de-passe" class="group">
+  <h2 class="group-title">Mot de passe</h2>
+  {# Champ caché : aide les gestionnaires de mots de passe à associer le bon compte #}
+  <input type="text" name="username" value="{{ currentUser.username }}" autocomplete="username" hidden>
+  <label class="field">
+    <span class="field-label">Mot de passe actuel</span>
+    <input type="password" name="current" autocomplete="current-password" required
+           {% if pwErrors.current %}aria-invalid="true" aria-describedby="current-error"{% endif %}>
+    {% if pwErrors.current %}<p class="field-error" id="current-error">{{ pwErrors.current }}</p>{% endif %}
+  </label>
+  <label class="field">
+    <span class="field-label">Nouveau mot de passe ({{ minPassword }} caractères minimum)</span>
+    <input type="password" name="password" autocomplete="new-password" minlength="{{ minPassword }}" required
+           {% if pwErrors.password %}aria-invalid="true" aria-describedby="password-error"{% endif %}>
+  </label>
+  <label class="field">
+    <span class="field-label">Confirmer le nouveau mot de passe</span>
+    <input type="password" name="confirm" autocomplete="new-password" minlength="{{ minPassword }}" required
+           {% if pwErrors.password %}aria-invalid="true" aria-describedby="password-error"{% endif %}>
+    {% if pwErrors.password %}<p class="field-error" id="password-error">{{ pwErrors.password }}</p>{% endif %}
+  </label>
+  <button type="submit" class="button button--quiet">Changer le mot de passe</button>
+</form>
+
+<form method="post" action="/deconnexion" class="center">
+  <button type="submit" class="button button--danger">Se déconnecter</button>
+</form>
+{% endblock %}

@@ -288,3 +288,45 @@ export function editionsWithoutCover() {
 export function setEditionCover(editionId, coverFile) {
   db.prepare('UPDATE editions SET cover_file = ? WHERE id = ?').run(coverFile, editionId);
 }
+
+// ---------- Amis ----------
+
+// Livres d'un utilisateur pour un statut donné, les plus récents d'abord
+function readingsByStatus(userId, status, limit) {
+  return db.prepare(`
+    SELECT w.id, w.title, w.authors, r.finished_on,
+      COALESCE(e.cover_file, (SELECT cover_file FROM editions WHERE work_id = w.id AND cover_file IS NOT NULL LIMIT 1)) AS cover_file
+    FROM readings r JOIN works w ON w.id = r.work_id
+    LEFT JOIN editions e ON e.id = r.edition_id
+    WHERE r.user_id = ? AND r.status = ?
+    ORDER BY COALESCE(r.finished_on, r.started_on, r.updated_at) DESC, r.updated_at DESC
+    LIMIT ?
+  `).all(userId, status, limit);
+}
+
+// Vue « Ce que lisent mes amis » : pour chaque autre utilisateur, ses lectures en cours
+// et ses derniers livres terminés. Regroupé par personne, ce n'est pas un fil d'actualité.
+export function friendsOverview(currentUserId) {
+  const users = db.prepare(`
+    SELECT id, username, display_name FROM users WHERE id != ? ORDER BY display_name COLLATE NOCASE
+  `).all(currentUserId);
+  return users.map((u) => ({
+    ...u,
+    counts: libraryCounts(u.id),
+    reading: readingsByStatus(u.id, 'en_cours', 12),
+    finished: readingsByStatus(u.id, 'lu', 6),
+  }));
+}
+
+// Ce que les autres utilisateurs ont fait de ce livre : statut, note, avis
+export function otherReaders(workId, currentUserId) {
+  return db.prepare(`
+    SELECT u.id AS user_id, u.username, u.display_name, r.status, r.finished_on,
+      rv.rating, rv.body, rv.recommends, rv.updated_at AS reviewed_at
+    FROM users u
+    LEFT JOIN readings r ON r.user_id = u.id AND r.work_id = @workId
+    LEFT JOIN reviews rv ON rv.user_id = u.id AND rv.work_id = @workId
+    WHERE u.id != @currentUserId AND (r.id IS NOT NULL OR rv.id IS NOT NULL)
+    ORDER BY rv.body IS NULL, rv.rating IS NULL, COALESCE(rv.updated_at, r.updated_at) DESC
+  `).all({ workId, currentUserId });
+}

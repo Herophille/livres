@@ -1,0 +1,53 @@
+{% extends "layout.njk" %}
+
+{# Rangée de couvertures défilante #}
+{% macro coverRow(books, label) %}
+<ul class="cover-row" aria-label="{{ label }}">
+  {% for book in books %}
+  <li>
+    <a href="/livres/{{ book.id }}" class="cover-row__item" title="{{ book.title }}">
+      {% set thumb = true %}{% include "partials/cover.njk" %}
+      <span class="visually-hidden">{{ book.title }}</span>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% endmacro %}
+
+{% block content %}
+<header class="page-head">
+  <h1 class="large-title">Amis</h1>
+</header>
+
+{% if not friends.length %}
+  <div class="empty">
+    <p>Personne d'autre n'a encore de compte.</p>
+    {% if currentUser.role == 'admin' %}<a class="button" href="/admin/comptes">Créer un compte</a>{% endif %}
+  </div>
+{% endif %}
+
+{% for f in friends %}
+<section class="group friend" aria-labelledby="friend-{{ f.id }}">
+  <a class="friend__head" href="/amis/{{ f.username }}">
+    <span class="avatar" style="--h: {{ f.username | hue }}" aria-hidden="true">{{ f.display_name | initial }}</span>
+    <span class="friend__name">
+      <span id="friend-{{ f.id }}" class="friend__title">{{ f.display_name }}</span>
+      <span class="friend__meta">{{ f.counts.all or 0 }} livre{{ 's' if f.counts.all > 1 }} · {{ f.counts.lu or 0 }} lu{{ 's' if f.counts.lu > 1 }}</span>
+    </span>
+    <span class="chevron" aria-hidden="true"></span>
+  </a>
+
+  {% if f.reading.length %}
+    <h3 class="friend__label">En cours</h3>
+    {{ coverRow(f.reading, 'En cours') }}
+  {% endif %}
+  {% if f.finished.length %}
+    <h3 class="friend__label">Derniers lus</h3>
+    {{ coverRow(f.finished, 'Derniers lus') }}
+  {% endif %}
+  {% if not f.reading.length and not f.finished.length %}
+    <p class="hint">Aucune lecture en cours ni terminée pour l'instant.</p>
+  {% endif %}
+</section>
+{% endfor %}
+{% endblock %}

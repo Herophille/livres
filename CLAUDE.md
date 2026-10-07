@@ -50,10 +50,11 @@ src/db/index.js          connection + migration runner
 src/db/migrations/*.sql  numbered migrations, applied in order at startup
 src/db/seed.js           first-run seed: genre list, admin account
 src/lib/auth.js          sessions (SQLite table, signed cookie), password hashing
-src/lib/books.js         all book/reading queries and form parsing
+src/lib/books.js         all book/reading queries and form parsing, friends' readings
+src/lib/users.js         accounts: create/delete (admin), password change and reset, display name
 src/lib/labels.js        statuses, formats, languages, countries (French labels), sortTitle()
 src/lib/isbn.js          ISBN-10/13 validation, normalized to ISBN-13
-src/routes/              auth.js, library.js, books.js
+src/routes/              auth.js, library.js, books.js, users.js (profile, friends, admin)
 src/services/metadata/   ISBN lookup: googlebooks.js, bnf.js, openlibrary.js, merged in index.js; covers.js finds cover candidates
 src/scripts/fill-covers.js  one-off: fetch covers for editions that have none (`npm run couvertures`)
 src/scripts/make-icons.js   regenerates the home screen PNG icons (`npm run icones`), commit the output
@@ -102,6 +103,10 @@ Schema changes go in a **new** migration file (`002_….sql`); never edit `001_i
 - Without HTTPS there's no install prompt: the library page shows a dismissible hint (iOS or Android wording, hidden in standalone mode and on desktop, dismissal kept in `localStorage`). On Android over HTTP, the home screen shortcut opens in a normal Chrome tab; iOS opens it full screen.
 - In standalone mode there's no browser loading indicator, so `app.js` shows a top progress bar on full page navigations (not htmx requests). `.back` links call `history.back()` when the referrer is the link's target, to keep library filters and scroll.
 - Scan decoding runs on the main thread: yield (`setTimeout`) between attempts so the status message paints. Attempts cover the full photo and a zoomed centre crop, each straight and rotated 90°.
+- Admin-only routes live in an encapsulated plugin in `routes/users.js` with a `preHandler` guard. In a hook, `reply.viewAsync()` only renders: send the HTML yourself (`reply.code(403).send(html)`) or the request carries on to the route.
+- Deleting an account cascades to its readings, reviews, copies and sessions; works it created stay (`created_by` set to null). You can't delete yourself or the last admin. Password change closes the user's other sessions; an admin reset closes all of them.
+- Destructive forms use `data-confirm="…"` (handled in `app.js`, capture phase), not inline `onsubmit`, so names with apostrophes can't break the JS.
+- "Amis" is grouped per person (current reads, last finished), deliberately not a chronological feed. Friend URLs use the username: `/amis/:username`.
 - After creating a book the redirect carries `?ajoute=1` (notice + "Ajouter un autre livre"); `app.js` strips it from the URL.
 
 ## Roadmap
@@ -109,7 +114,7 @@ Schema changes go in a **new** migration file (`002_….sql`); never edit `001_i
 - [x] **Phase 0/1:** login, admin bootstrap, add by photo scan / ISBN / manual entry, five statuses, library grid and list with filters and search, book page, edit form, admin delete, Docker, nightly backups
 - [x] **Phase 2:** optional start/finish dates, ratings (1 to 5 stars), reviews, recommend yes/no, search and filters, linking editions and translations to an existing work (deduplication when adding)
 - [x] **Phase 3:** mobile polish (scan flow, home screen install)
-- [ ] **Phase 4:** admin page to create and delete accounts, password change, user profiles, other users' reviews on book pages, "what my friends read" view
+- [x] **Phase 4:** admin page to create and delete accounts, password change, user profiles, other users' reviews on book pages, "what my friends read" view
 - [ ] **Phase 5:** statistics (books and pages per year; breakdowns by genre, language, country, format)
 - [ ] **Phase 6:** physical copies and loans (free-text borrower), "who has my book" view
 - [ ] **Phase 7:** CSV export, Goodreads CSV import

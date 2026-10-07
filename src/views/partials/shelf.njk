@@ -1,6 +1,10 @@
 {% if books.length == 0 %}
   <div class="empty">
-    {% if q %}
+    {% if friend and status %}
+      <p>Aucun livre avec le statut « {{ status | statusLabel }} ».</p>
+    {% elif friend %}
+      <p>{{ friend.display_name }} n'a encore aucun livre.</p>
+    {% elif q %}
       <p>Aucun livre ne correspond à « {{ q }} ».</p>
     {% elif status and not genreId %}
       <p>Aucun livre avec le statut « {{ status | statusLabel }} ».</p>

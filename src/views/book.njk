@@ -34,6 +34,34 @@
 
     {% include "partials/review.njk" %}
 
+    {% if friends.length %}
+    <section class="friend-reviews" aria-labelledby="friends-title">
+      <h2 id="friends-title" class="section-title">Chez les amis</h2>
+      <ul class="friend-reviews__list">
+        {% for f in friends %}
+        <li class="friend-review">
+          <div class="friend-review__head">
+            <span class="avatar" style="--h: {{ f.username | hue }}" aria-hidden="true">{{ f.display_name | initial }}</span>
+            <span class="friend-review__who">
+              <a href="/amis/{{ f.username }}" class="friend-review__name">{{ f.display_name }}</a>
+              <span class="friend-review__meta">
+                {% if f.status %}<span class="status-dot status-dot--{{ f.status }}" aria-hidden="true"></span>{{ f.status | statusLabel }}{% if f.status == 'lu' and f.finished_on %} le {{ f.finished_on | dateFr }}{% endif %}{% else %}N'a pas ce livre dans sa bibliothèque{% endif %}
+              </span>
+            </span>
+          </div>
+          {% if f.rating or f.recommends !== null %}
+          <p class="friend-review__verdict">
+            {% if f.rating %}<span class="stars stars--large" role="img" aria-label="Noté {{ f.rating }} sur 5">{% for i in range(0, 5) %}<span class="{{ 'is-on' if i < f.rating }}">★</span>{% endfor %}</span>{% endif %}
+            {% if f.recommends === 1 %}<span class="badge">Recommande</span>{% elif f.recommends === 0 %}<span class="badge badge--muted">Ne recommande pas</span>{% endif %}
+          </p>
+          {% endif %}
+          {% if f.body %}<p class="friend-review__body">{{ f.body }}</p>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
     {% if editions.length > 1 %}
     <section class="editions" aria-labelledby="editions-title">
       <h2 id="editions-title" class="section-title">{{ editions.length }} éditions</h2>
@@ -65,7 +93,7 @@
       <a class="button button--quiet" href="/livres/{{ work.id }}/modifier">Modifier la fiche</a>
       {% if currentUser.role == 'admin' %}
       <form method="post" action="/livres/{{ work.id }}/supprimer"
-            onsubmit="return confirm('Supprimer ce livre pour tous les utilisateurs ? Cette action est définitive.')">
+            data-confirm="Supprimer ce livre pour tous les utilisateurs ? Cette action est définitive.">
         <button type="submit" class="button button--danger">Supprimer le livre</button>
       </form>
       {% endif %}

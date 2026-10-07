@@ -128,7 +128,7 @@ img { max-width: 100%; }
   border-top: 0.5px solid var(--line);
 }
 
-.tab, .tab--form button {
+.tab {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -143,9 +143,7 @@ img { max-width: 100%; }
   cursor: pointer;
   text-decoration: none !important;
 }
-.tab--form { display: flex; }
-.tab--form button { width: 100%; }
-.tab svg, .tab--form svg { width: 26px; height: 26px; fill: currentColor; }
+.tab svg { width: 26px; height: 26px; fill: currentColor; }
 .tab.is-active { color: var(--accent); }
 
 @media (min-width: 900px) {
@@ -160,7 +158,7 @@ img { max-width: 100%; }
     border-top: 0;
     border-right: 0.5px solid var(--line);
   }
-  .tab, .tab--form { flex: 0 0 auto; height: 64px; }
+  .tab { flex: 0 0 auto; height: 64px; }
   body:has(.tabbar) .page { padding-left: 128px; padding-bottom: 48px; }
 }
 
@@ -707,7 +705,7 @@ a, button, label, select, summary { touch-action: manipulation; }
   .button:active, .segmented__item:active, .chip:active, .scan-button:active { opacity: 0.7; }
   .grid__item:active .cover, .match:active { opacity: 0.75; }
   .booklist__row:active { background: var(--bg); }
-  .tab:active, .tab--form button:active { color: var(--text); }
+  .tab:active { color: var(--text); }
 }
 
 /* Barre de chargement entre deux pages */
@@ -809,3 +807,128 @@ a, button, label, select, summary { touch-action: manipulation; }
   cursor: pointer;
 }
 .install-hint__close svg { width: 18px; height: 18px; fill: currentColor; }
+
+/* ---------- Phase 4 : comptes, profil, amis ---------- */
+
+/* Pastille d'utilisateur : initiale sur une teinte dérivée du nom */
+.avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: hsl(var(--h) 32% 38%);
+  color: hsl(var(--h) 30% 94%);
+  font-weight: 600;
+  font-size: 16px;
+}
+.avatar--large { width: 64px; height: 64px; font-size: 28px; font-family: var(--serif); }
+
+.profile-head { display: flex; align-items: center; gap: 16px; margin: 8px 0 20px; }
+.profile-head__meta { margin: 2px 0 0; color: var(--text-2); font-size: 15px; }
+
+/* Chiffres du profil */
+.stat-row {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.stat-row a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 8px;
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 14px;
+  text-decoration: none !important;
+}
+.stat-row strong { color: var(--text); font-size: 24px; font-variant-numeric: tabular-nums; }
+
+/* Lignes de menu et chevrons */
+.menu { margin-bottom: 20px; }
+.chevron {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin-right: 4px;
+  border-right: 2px solid var(--text-2);
+  border-top: 2px solid var(--text-2);
+  transform: rotate(45deg);
+  opacity: 0.6;
+}
+.chevron--down { transform: rotate(135deg); transition: transform 0.15s; }
+details[open] > summary .chevron--down { transform: rotate(-45deg); }
+
+/* Vue Amis : une carte par personne */
+.friend { padding-bottom: 12px; }
+.friend__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: inherit;
+  text-decoration: none !important;
+}
+.friend__name { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.friend__title { font-size: 18px; font-weight: 600; }
+.friend__meta { font-size: 14px; color: var(--text-2); }
+.friend__label { margin: 16px 0 8px; font-size: 13px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.04em; }
+.friend .hint { margin-top: 12px; }
+
+/* Rangée de couvertures défilante */
+.cover-row {
+  list-style: none;
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  margin: 0 -16px;
+  padding: 2px 16px 10px;
+  scrollbar-width: none;
+}
+.cover-row::-webkit-scrollbar { display: none; }
+.cover-row li { flex: none; width: 76px; }
+.cover-row__item { display: block; }
+.cover-row .cover { box-shadow: 0 1px 2px rgb(0 0 0 / 0.12), 0 4px 10px -4px rgb(0 0 0 / 0.3); }
+.cover-row .cover--blank { padding: 12% 10%; }
+.cover-row .cover__author, .cover-row .cover--blank::after { display: none; }
+.cover-row .cover__title { font-size: 10px; -webkit-line-clamp: 4; }
+
+/* Bibliothèque d'un ami : tri + affichage sur une ligne, puis les statuts */
+.toolbar--friend .filter select { height: 38px; }
+
+/* Avis des amis sur la page livre */
+.friend-reviews { margin-bottom: 24px; }
+.friend-reviews__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--surface);
+  border-radius: var(--radius-m);
+}
+.friend-review { padding: 14px 16px; }
+.friend-review + .friend-review { border-top: 0.5px solid var(--line); }
+.friend-review__head { display: flex; align-items: center; gap: 12px; }
+.friend-review__who { min-width: 0; display: flex; flex-direction: column; }
+.friend-review__name { font-weight: 600; color: var(--text); }
+.friend-review__meta { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--text-2); }
+.friend-review__meta .status-dot { width: 8px; height: 8px; }
+.friend-review__verdict { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 10px 0 0; }
+.friend-review__body { margin: 8px 0 0; white-space: pre-line; overflow-wrap: anywhere; }
+.stars--large { font-size: 17px; letter-spacing: 2px; }
+.badge--muted { background: var(--bg); color: var(--text-2); }
+
+/* Comptes (admin) : chaque ligne se déplie */
+.accounts { margin-bottom: 20px; }
+.accounts li + li::before { left: 64px; }
+.account summary { list-style: none; cursor: pointer; }
+.account summary::-webkit-details-marker { display: none; }
+.account__body { display: grid; gap: 12px; padding: 4px 16px 16px 64px; }
+.account__body .field { margin: 0; }
+
+.check { display: flex; align-items: center; gap: 10px; margin: 4px 0 14px; cursor: pointer; }
+.check input { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--accent); }

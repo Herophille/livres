@@ -1,7 +1,7 @@
 import {
   parseBookForm, createBook, updateBook, getBook, findWorkIdByIsbn, isIsbnTaken,
   changeReadingStatus, removeReading, deleteWork, listGenres, setReadingDates, setReadingEdition,
-  saveReview, deleteReview, findSimilarWorks,
+  saveReview, deleteReview, findSimilarWorks, otherReaders,
 } from '../lib/books.js';
 import { normalizeIsbn } from '../lib/isbn.js';
 import { STATUSES, STATUS_LABELS, FORMATS, LANGUAGES, COUNTRIES } from '../lib/labels.js';
@@ -106,7 +106,9 @@ export default async function bookRoutes(app) {
     let notice = null;
     if (req.query.ajoute) notice = 'Livre ajouté.';
     else if (req.query.existant) notice = 'Ce livre est déjà dans la bibliothèque commune.';
-    return reply.viewAsync('book.njk', { title: book.work.title, ...book, statuses: STATUSES, notice });
+    return reply.viewAsync('book.njk', {
+      title: book.work.title, ...book, statuses: STATUSES, notice, friends: otherReaders(book.work.id, req.user.id),
+    });
   });
 
   app.post('/livres/:id/statut', async (req, reply) => {

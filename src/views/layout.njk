@@ -29,12 +29,14 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zm-1 5v3H8v2h3v3h2v-3h3v-2h-3V8z"/></svg>
       <span>Ajouter</span>
     </a>
-    <form method="post" action="/deconnexion" class="tab tab--form">
-      <button type="submit">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5z"/></svg>
-        <span>Déconnexion</span>
-      </button>
-    </form>
+    <a href="/amis" class="tab {% if path.startsWith('/amis') %}is-active{% endif %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 1.8c-3.9 0-7 2-7 4.6V20h14v-2.1c0-2.6-3.1-4.6-7-4.6zm7.5-1.8a3.3 3.3 0 1 0 0-6.6 3.3 3.3 0 0 0 0 6.6zm.8 1.9c1.7.8 2.7 2.3 2.7 4.5V20h3v-1.9c0-2.4-2.4-4.3-5.7-4.6z"/></svg>
+      <span>Amis</span>
+    </a>
+    <a href="/profil" class="tab {% if path.startsWith('/profil') or path.startsWith('/admin') %}is-active{% endif %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5z"/></svg>
+      <span>Profil</span>
+    </a>
   </nav>
   {% endif %}
 

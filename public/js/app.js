@@ -1,3 +1,10 @@
+// Confirmation avant une action destructive : <form data-confirm="Message">.
+// Écouteur en phase de capture, pour passer avant la barre de chargement ci-dessous.
+document.addEventListener('submit', (event) => {
+  const message = event.target.dataset?.confirm;
+  if (message && !window.confirm(message)) event.preventDefault();
+}, true);
+
 // Aperçu immédiat de la couverture choisie dans le formulaire livre
 document.addEventListener('change', (event) => {
   const input = event.target;
