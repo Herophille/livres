@@ -2,6 +2,8 @@ services:
   livres:
     build: .
     image: livres:latest
+    # Image construite sur place, elle n'existe pas sur Docker Hub : ne jamais la télécharger
+    pull_policy: build
     container_name: livres
     restart: unless-stopped
     ports:
