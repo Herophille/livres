@@ -18,6 +18,7 @@
   --st-lu: #8a8a8f;
   --st-en_pause: #b7791f;
   --st-abandonne: #a04a4a;
+  --chart: #23805f;
 
   --ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", "Noto Serif", Georgia, serif;
@@ -45,6 +46,7 @@
     --st-lu: #8e8e93;
     --st-en_pause: #e0a84a;
     --st-abandonne: #e07b7b;
+    --chart: #3f9c76;
   }
 }
 
@@ -932,3 +934,112 @@ details[open] > summary .chevron--down { transform: rotate(-45deg); }
 
 .check { display: flex; align-items: center; gap: 10px; margin: 4px 0 14px; cursor: pointer; }
 .check input { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--accent); }
+
+/* ---------- Phase 5 : statistiques ---------- */
+
+/* Pastilles-liens (choix de l'année) */
+a.chip { color: inherit; text-decoration: none !important; }
+.chip.is-on { background: var(--accent); color: var(--on-accent); }
+.stats-years { margin-bottom: 16px; padding-bottom: 4px; }
+
+/* Chiffres clés */
+.kpis {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 12px;
+  border-radius: var(--radius-m);
+  background: var(--surface);
+}
+.kpi__value { font-size: 28px; font-weight: 600; line-height: 1.1; letter-spacing: -0.01em; }
+.kpi__unit { font-size: 18px; color: var(--st-en_pause); }
+.kpi__label { font-size: 13px; color: var(--text-2); line-height: 1.25; }
+
+/* Histogramme en colonnes : la hauteur du bloc inclut les étiquettes, la valeur se pose sur la barre */
+.chart { margin-left: 0; margin-right: 0; }
+.columns {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+}
+.columns__item {
+  flex: 1 1 0;
+  min-width: 0;
+  display: grid;
+  grid-template-rows: 140px 20px;
+  justify-items: center;
+}
+.columns__plot {
+  position: relative;
+  width: 100%;
+  border-bottom: 1px solid var(--line);
+  /* Hauteur de la barre : on garde 18px au-dessus de la plus haute pour sa valeur */
+  --bar-h: calc((100% - 18px) * var(--p));
+}
+.columns__bar {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(24px, 70%);
+  height: var(--bar-h);
+  border-radius: 4px 4px 0 0;
+  background: var(--chart);
+}
+/* Valeur posée sur le haut de la barre */
+.columns__value {
+  position: absolute;
+  bottom: calc(var(--bar-h) + 2px);
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.columns__label { align-self: end; font-size: 12px; color: var(--text-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+@media (hover: hover) {
+  .columns__item:hover .columns__bar { filter: brightness(1.15); }
+  .columns__item:hover .columns__value { color: var(--text); }
+}
+
+/* Chiffres sous un histogramme trop dense pour tout étiqueter */
+.chart-table { margin-top: 12px; font-size: 15px; }
+.chart-table summary { color: var(--accent); cursor: pointer; }
+.chart-table table { width: 100%; margin-top: 8px; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.chart-table th, .chart-table td { padding: 6px 0; border-top: 0.5px solid var(--line); text-align: left; font-weight: 400; }
+.chart-table td { text-align: right; }
+
+.chart-notes { margin: -8px 0 20px; }
+.chart-note { margin: 4px 0 0; font-size: 14px; color: var(--text-2); }
+.group .chart-note { margin-top: 12px; }
+
+/* Répartitions : étiquette, puis barre avec la valeur au bout */
+.bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.bars__label { display: block; font-size: 15px; margin-bottom: 3px; overflow-wrap: anywhere; }
+.bars__track { display: flex; align-items: center; gap: 8px; }
+.bars__bar {
+  flex: none;
+  width: calc((100% - 3.5em) * var(--p));
+  min-width: 2px;
+  height: 12px;
+  border-radius: 0 4px 4px 0;
+  background: var(--chart);
+}
+.bars__value { font-size: 14px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+/* « Autres » : regroupement, en gris pour ne pas passer pour une catégorie */
+.bars__row--other .bars__bar { background: var(--text-2); opacity: 0.45; }
+.bars__row--other .bars__label { color: var(--text-2); }

@@ -5,7 +5,8 @@
   <span class="avatar avatar--large" style="--h: {{ friend.username | hue }}" aria-hidden="true">{{ friend.display_name | initial }}</span>
   <div>
     <h1 class="large-title large-title--small">{{ friend.display_name }}</h1>
-    <p class="profile-head__meta">{{ counts.all or 0 }} livre{{ 's' if counts.all > 1 }} · {{ counts.lu or 0 }} lu{{ 's' if counts.lu > 1 }}</p>
+    <p class="profile-head__meta">{{ counts.all or 0 }} livre{{ 's' if counts.all > 1 }} · {{ counts.lu or 0 }} lu{{ 's' if counts.lu > 1 }}
+      · <a href="/amis/{{ friend.username }}/statistiques">Statistiques</a></p>
   </div>
 </header>
 

@@ -1,0 +1,118 @@
+{% extends "layout.njk" %}
+
+{# Histogramme en colonnes (une seule série). `key` : 'books' ou 'pages'. #}
+{% macro columnChart(id, title, timeline, key, unit) %}
+<figure class="group chart" aria-labelledby="{{ id }}">
+  <figcaption id="{{ id }}" class="group-title">{{ title }}</figcaption>
+  <ol class="columns">
+    {% for c in timeline %}
+    {% set value = c[key] %}
+    {% set label = (c.long or c.label) ~ ' : ' ~ (value | num) ~ ' ' ~ unit ~ ('s' if value > 1) %}
+    <li class="columns__item" title="{{ label }}">
+      <span class="columns__plot" style="--p: {{ c[key ~ 'Pct'] / 100 }}">
+        <span class="columns__bar"></span>
+        {% if c.showValue and value %}<span class="columns__value" aria-hidden="true">{{ value | compact }}</span>{% endif %}
+      </span>
+      <span class="columns__label" aria-hidden="true">{% if c.tick %}{{ c.label }}{% endif %}</span>
+      <span class="visually-hidden">{{ label }}</span>
+    </li>
+    {% endfor %}
+  </ol>
+  {% if timeline.length > 12 %}
+  <details class="chart-table">
+    <summary>Voir les chiffres</summary>
+    <table>
+      <tbody>
+        {% for c in timeline | reverse %}<tr><th scope="row">{{ c.label }}</th><td>{{ c[key] | num }}</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </details>
+  {% endif %}
+</figure>
+{% endmacro %}
+
+{# Répartition : barres horizontales classées, valeur au bout de la barre #}
+{% macro barList(id, title, data) %}
+<section class="group" aria-labelledby="{{ id }}">
+  <h2 id="{{ id }}" class="group-title">{{ title }}</h2>
+  {% if data.rows.length %}
+  <ul class="bars">
+    {% for r in data.rows %}
+    <li class="bars__row {% if r.other %}bars__row--other{% endif %}">
+      <span class="bars__label">{{ r.label }}</span>
+      <span class="bars__track">
+        <span class="bars__bar" style="--p: {{ r.pct / 100 }}"></span>
+        <span class="bars__value">{{ r.n | num }}</span>
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="hint hint--top">Aucune information pour l'instant.</p>
+  {% endif %}
+  {% if data.unknown %}<p class="chart-note">{{ data.unknown | num }} livre{{ 's' if data.unknown > 1 }} non renseigné{{ 's' if data.unknown > 1 }}.</p>{% endif %}
+</section>
+{% endmacro %}
+
+{% block content %}
+{% if friend %}
+<a class="back" href="/amis/{{ friend.username }}">{{ friend.display_name }}</a>
+{% else %}
+<a class="back" href="/profil">Profil</a>
+{% endif %}
+<header class="page-head">
+  <h1 class="large-title large-title--small">Statistiques</h1>
+  {% if friend %}<p class="profile-head__meta">Les lectures de {{ friend.display_name }}</p>{% endif %}
+</header>
+
+{% if stats.years.length %}
+<nav class="chips stats-years" aria-label="Période">
+  <a class="chip {% if not stats.year %}is-on{% endif %}" href="{{ base }}" {% if not stats.year %}aria-current="page"{% endif %}>Toutes les années</a>
+  {% for y in stats.years %}
+  <a class="chip {% if stats.year == y %}is-on{% endif %}" href="{{ base }}?annee={{ y }}" {% if stats.year == y %}aria-current="page"{% endif %}>{{ y }}</a>
+  {% endfor %}
+</nav>
+{% endif %}
+
+{% if not stats.total %}
+  <div class="empty">
+    <p>{{ (friend.display_name ~ " n'a") if friend else "Vous n'avez" }} encore marqué aucun livre comme lu.</p>
+    <p class="hint">Les statistiques se remplissent avec les livres au statut « Lu ».</p>
+  </div>
+{% else %}
+
+<ul class="kpis" aria-label="En résumé">
+  <li class="kpi">
+    <span class="kpi__value">{{ stats.total | num }}</span>
+    <span class="kpi__label">livre{{ 's' if stats.total > 1 }} lu{{ 's' if stats.total > 1 }}{% if stats.year %} en {{ stats.year }}{% endif %}</span>
+  </li>
+  <li class="kpi">
+    <span class="kpi__value">{{ stats.pages | num }}</span>
+    <span class="kpi__label">pages</span>
+  </li>
+  <li class="kpi">
+    <span class="kpi__value">{% if stats.average %}{{ stats.average | decimal }}<span class="kpi__unit"> ★</span>{% else %}–{% endif %}</span>
+    <span class="kpi__label">{% if stats.ratedCount %}note moyenne ({{ stats.ratedCount }} noté{{ 's' if stats.ratedCount > 1 }}){% else %}aucune note{% endif %}</span>
+  </li>
+</ul>
+
+{% if stats.timeline.length %}
+  {% set period = ('par mois en ' ~ stats.year) if stats.year else 'par année' %}
+  {{ columnChart('chart-books', 'Livres lus ' ~ period, stats.timeline, 'books', 'livre') }}
+  {% if stats.pages %}{{ columnChart('chart-pages', 'Pages lues ' ~ period, stats.timeline, 'pages', 'page') }}{% endif %}
+{% endif %}
+
+{% if stats.undated or stats.withoutPages %}
+<div class="chart-notes">
+  {% if stats.undated %}<p class="chart-note">{{ stats.undated | num }} livre{{ 's' if stats.undated > 1 }} lu{{ 's' if stats.undated > 1 }} sans date de fin {{ 'ne sont' if stats.undated > 1 else "n'est" }} pas placé{{ 's' if stats.undated > 1 }} dans le temps, mais {{ 'comptent' if stats.undated > 1 else 'compte' }} dans le reste.</p>{% endif %}
+  {% if stats.withoutPages %}<p class="chart-note">{{ stats.withoutPages | num }} livre{{ 's' if stats.withoutPages > 1 }} sans nombre de pages.</p>{% endif %}
+</div>
+{% endif %}
+
+{{ barList('by-genre', 'Genres', stats.genres) }}
+{{ barList('by-language', 'Langues de lecture', stats.languages) }}
+{{ barList('by-country', 'Pays de première publication', stats.countries) }}
+{{ barList('by-format', 'Formats', stats.formats) }}
+
+{% endif %}
+{% endblock %}

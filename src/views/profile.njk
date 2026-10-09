@@ -16,15 +16,20 @@
   <li><a href="/?statut=lu"><strong>{{ counts.lu or 0 }}</strong> lu{{ 's' if counts.lu > 1 }}</a></li>
 </ul>
 
-{% if currentUser.role == 'admin' %}
-<nav class="booklist menu" aria-label="Administration">
+<nav class="booklist menu" aria-label="Plus">
+  <a class="booklist__row" href="/statistiques">
+    <span class="booklist__text"><span class="booklist__title">Statistiques</span>
+      <span class="booklist__author">Livres et pages par année, genres, langues, pays</span></span>
+    <span class="chevron" aria-hidden="true"></span>
+  </a>
+  {% if currentUser.role == 'admin' %}
   <a class="booklist__row" href="/admin/comptes">
     <span class="booklist__text"><span class="booklist__title">Gérer les comptes</span>
       <span class="booklist__author">Créer, réinitialiser ou supprimer un compte</span></span>
     <span class="chevron" aria-hidden="true"></span>
   </a>
+  {% endif %}
 </nav>
-{% endif %}
 
 <form method="post" action="/profil/nom" class="group">
   <h2 class="group-title">Nom affiché</h2>

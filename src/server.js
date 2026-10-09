@@ -19,6 +19,7 @@ import authRoutes from './routes/auth.js';
 import libraryRoutes from './routes/library.js';
 import bookRoutes from './routes/books.js';
 import userRoutes from './routes/users.js';
+import statsRoutes from './routes/stats.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -56,6 +57,13 @@ await app.register(fastifyView, {
         const d = v ? new Date(`${String(v).slice(0, 10)}T00:00:00Z`) : null;
         return d && !Number.isNaN(d.getTime()) ? dateFr.format(d) : '';
       });
+      // Nombres à la française : 12 345 ; compact : 12,3 k ; une décimale : 4,2
+      const num = new Intl.NumberFormat('fr-FR');
+      const compact = new Intl.NumberFormat('fr-FR', { notation: 'compact', maximumFractionDigits: 1 });
+      const decimal = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      env.addFilter('num', (v) => num.format(v || 0));
+      env.addFilter('compact', (v) => compact.format(v || 0));
+      env.addFilter('decimal', (v) => decimal.format(v || 0));
       // Initiale pour les pastilles d'utilisateur
       env.addFilter('initial', (s) => String(s || '?').trim().charAt(0).toUpperCase());
       // Teinte stable dérivée du titre, pour les couvertures de remplacement
@@ -139,6 +147,7 @@ await app.register(authRoutes);
 await app.register(libraryRoutes);
 await app.register(bookRoutes);
 await app.register(userRoutes);
+await app.register(statsRoutes);
 
 app.setNotFoundHandler((req, reply) => {
   reply.code(404).view('error.njk', { title: 'Page introuvable', message: "Cette page n'existe pas ou a été supprimée." });
