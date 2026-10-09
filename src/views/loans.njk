@@ -1,0 +1,69 @@
+{% extends "layout.njk" %}
+
+{# Ligne de livre : vignette, titre, édition, et une ligne de détail propre à chaque liste #}
+{% macro bookRow(r, who, detail) %}
+<a href="/livres/{{ r.work_id }}" class="booklist__row">
+  <span class="booklist__cover">{% set book = { title: r.title, authors: r.authors, cover_file: r.cover_file } %}{% set thumb = true %}{% include "partials/cover.njk" %}</span>
+  <span class="booklist__text">
+    <span class="booklist__title">{{ r.title }}</span>
+    <span class="booklist__author">{{ r.label }}{% if r.note %} · {{ r.note }}{% endif %}</span>
+    {% if who or detail %}<span class="loan__detail">{% if who %}<strong>{{ who }}</strong> {% endif %}{{ detail }}</span>{% endif %}
+  </span>
+</a>
+{% endmacro %}
+
+{% block content %}
+<a class="back" href="/profil">Profil</a>
+<header class="page-head">
+  <h1 class="large-title large-title--small">Mes prêts</h1>
+</header>
+
+{% if not active.length and not home.length %}
+  <div class="empty">
+    <p>Vous n'avez encore indiqué aucun exemplaire papier.</p>
+    <p class="hint">Sur la page d'un livre, touchez « J'ai ce livre », puis « Prêter » quand vous le prêtez.</p>
+  </div>
+{% else %}
+
+<section aria-labelledby="lent-title" class="loans">
+  <h2 id="lent-title" class="section-title">Prêtés en ce moment</h2>
+  {% if active.length %}
+  <ul class="booklist">
+    {% for r in active %}
+    <li class="loan">
+      {% set since = "aujourd'hui" if r.days == 0 else ('depuis le ' ~ (r.lent_on | dateFr) ~ ' · ' ~ r.days ~ ' jour' ~ ('s' if r.days > 1)) %}
+      {{ bookRow(r, r.borrower_name, since) }}
+      <form method="post" action="/exemplaires/{{ r.copy_id }}/rendu" class="loan__action">
+        <input type="hidden" name="retour" value="/prets">
+        <button type="submit" class="button button--quiet button--small">Rendu</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="hint hint--top">Aucun livre prêté : tous vos exemplaires sont chez vous.</p>
+  {% endif %}
+</section>
+
+{% if home.length %}
+<section aria-labelledby="home-title" class="loans">
+  <h2 id="home-title" class="section-title">À la maison <span class="section-title__n">{{ home.length }}</span></h2>
+  <ul class="booklist">
+    {% for r in home %}<li>{{ bookRow(r) }}</li>{% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{% if history.length %}
+<section aria-labelledby="history-title" class="loans">
+  <h2 id="history-title" class="section-title">Prêts rendus</h2>
+  <ul class="booklist">
+    {% for r in history %}
+    <li>{{ bookRow(r, r.borrower_name, '· du ' ~ (r.lent_on | dateFr) ~ ' au ' ~ (r.returned_on | dateFr)) }}</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{% endif %}
+{% endblock %}

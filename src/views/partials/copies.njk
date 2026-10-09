@@ -1,0 +1,79 @@
+{# Mes exemplaires papier de ce livre et leurs prêts. Seul le propriétaire voit cette section. #}
+<section id="copies" class="group copies" aria-labelledby="copies-title">
+  <h2 id="copies-title" class="group-title">Mes exemplaires</h2>
+  {% if copyError %}<p class="field-error" role="alert">{{ copyError }}</p>{% endif %}
+
+  {% for c in copies %}
+  <div class="copy">
+    <p class="copy__label">{{ c.label }}{% if c.note %} <span class="copy__note">· {{ c.note }}</span>{% endif %}</p>
+
+    {% if c.loan %}
+      <p class="copy__loan">
+        <span class="badge badge--loan">Prêté</span>
+        à <strong>{{ c.loan.borrower_name }}</strong>
+        {% if c.loan.days == 0 %}aujourd'hui{% else %}depuis le {{ c.loan.lent_on | dateFr }} ({{ c.loan.days }} jour{{ 's' if c.loan.days > 1 }}){% endif %}
+      </p>
+      <form method="post" action="/exemplaires/{{ c.id }}/rendu"
+            hx-post="/exemplaires/{{ c.id }}/rendu" hx-target="#copies" hx-swap="outerHTML">
+        <button type="submit" class="button button--quiet button--small">Il m'a été rendu</button>
+      </form>
+    {% else %}
+      {% set err = lendError if lendError and lendError.id == c.id else null %}
+      <details class="copy__lend" {% if err %}open{% endif %}>
+        <summary class="button button--quiet button--small">Prêter</summary>
+        <form method="post" action="/exemplaires/{{ c.id }}/preter" class="copy__form"
+              hx-post="/exemplaires/{{ c.id }}/preter" hx-target="#copies" hx-swap="outerHTML">
+          <label class="field">
+            <span class="field-label">À qui ?</span>
+            <input name="borrower_name" list="borrowers" maxlength="80" required autocomplete="off"
+                   value="{{ err.values.borrower_name if err else '' }}" placeholder="Un ami, ou n'importe qui"
+                   {% if err %}aria-invalid="true" aria-describedby="lend-error-{{ c.id }}"{% endif %}>
+          </label>
+          <label class="field">
+            <span class="field-label">Le</span>
+            <input type="date" name="lent_on" value="{{ err.values.lent_on if err else today }}" max="{{ today }}" required>
+          </label>
+          {% if err %}<p class="field-error" id="lend-error-{{ c.id }}">{{ err.message }}</p>{% endif %}
+          <button type="submit" class="button button--small">Enregistrer le prêt</button>
+        </form>
+      </details>
+    {% endif %}
+
+    <form method="post" action="/exemplaires/{{ c.id }}/supprimer"
+          hx-post="/exemplaires/{{ c.id }}/supprimer" hx-target="#copies" hx-swap="outerHTML"
+          hx-confirm="Retirer cet exemplaire ? Son historique de prêts sera effacé.">
+      <button type="submit" class="link-button copy__remove">Je ne l'ai plus</button>
+    </form>
+  </div>
+  {% endfor %}
+
+  {% if not copies.length %}
+    <p class="hint hint--top">Vous possédez ce livre en papier ? Indiquez-le pour pouvoir noter vos prêts.</p>
+  {% endif %}
+
+  <details class="copy-add" {% if copyError %}open{% endif %}>
+    <summary class="button {{ 'button--quiet' if copies.length }}">{{ "J'en ai un autre" if copies.length else "J'ai ce livre" }}</summary>
+    <form method="post" action="/livres/{{ work.id }}/exemplaires" class="copy__form"
+          hx-post="/livres/{{ work.id }}/exemplaires" hx-target="#copies" hx-swap="outerHTML">
+      {% if copyEditions.length > 1 %}
+      <label class="field">
+        <span class="field-label">Édition</span>
+        <select name="edition_id">
+          {% for e in copyEditions %}<option value="{{ e.id }}" {% if e.id == defaultEdition %}selected{% endif %}>{{ e.label }}</option>{% endfor %}
+        </select>
+      </label>
+      {% else %}
+      <input type="hidden" name="edition_id" value="{{ copyEditions[0].id if copyEditions.length }}">
+      {% endif %}
+      <label class="field">
+        <span class="field-label">Note (facultatif)</span>
+        <input name="note" maxlength="200" placeholder="Dédicacé, offert par…, un peu abîmé">
+      </label>
+      <button type="submit" class="button button--small">Ajouter l'exemplaire</button>
+    </form>
+  </details>
+
+  <datalist id="borrowers">
+    {% for name in borrowers %}<option value="{{ name }}">{% endfor %}
+  </datalist>
+</section>

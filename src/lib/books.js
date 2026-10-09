@@ -318,15 +318,17 @@ export function friendsOverview(currentUserId) {
   }));
 }
 
-// Ce que les autres utilisateurs ont fait de ce livre : statut, note, avis
+// Ce que les autres utilisateurs ont fait de ce livre : statut, note, avis, exemplaire possédé
 export function otherReaders(workId, currentUserId) {
   return db.prepare(`
     SELECT u.id AS user_id, u.username, u.display_name, r.status, r.finished_on,
-      rv.rating, rv.body, rv.recommends, rv.updated_at AS reviewed_at
+      rv.rating, rv.body, rv.recommends, rv.updated_at AS reviewed_at,
+      EXISTS (SELECT 1 FROM copies c JOIN editions e ON e.id = c.edition_id
+        WHERE c.owner_id = u.id AND e.work_id = @workId) AS owns
     FROM users u
     LEFT JOIN readings r ON r.user_id = u.id AND r.work_id = @workId
     LEFT JOIN reviews rv ON rv.user_id = u.id AND rv.work_id = @workId
-    WHERE u.id != @currentUserId AND (r.id IS NOT NULL OR rv.id IS NOT NULL)
+    WHERE u.id != @currentUserId AND (r.id IS NOT NULL OR rv.id IS NOT NULL OR owns)
     ORDER BY rv.body IS NULL, rv.rating IS NULL, COALESCE(rv.updated_at, r.updated_at) DESC
   `).all({ workId, currentUserId });
 }

@@ -4,6 +4,7 @@ import {
   saveReview, deleteReview, findSimilarWorks, otherReaders,
 } from '../lib/books.js';
 import { normalizeIsbn } from '../lib/isbn.js';
+import { copiesContext } from '../lib/copies.js';
 import { STATUSES, STATUS_LABELS, FORMATS, LANGUAGES, COUNTRIES } from '../lib/labels.js';
 import { lookupIsbn } from '../services/metadata/index.js';
 import { findCovers } from '../services/metadata/covers.js';
@@ -108,6 +109,7 @@ export default async function bookRoutes(app) {
     else if (req.query.existant) notice = 'Ce livre est déjà dans la bibliothèque commune.';
     return reply.viewAsync('book.njk', {
       title: book.work.title, ...book, statuses: STATUSES, notice, friends: otherReaders(book.work.id, req.user.id),
+      ...copiesContext(req.user.id, book.work.id, book.edition?.id),
     });
   });
 

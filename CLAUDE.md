@@ -51,11 +51,12 @@ src/db/migrations/*.sql  numbered migrations, applied in order at startup
 src/db/seed.js           first-run seed: genre list, admin account
 src/lib/auth.js          sessions (SQLite table, signed cookie), password hashing
 src/lib/books.js         all book/reading queries and form parsing, friends' readings
+src/lib/copies.js        physical copies and loans
 src/lib/stats.js         reading statistics (computed in JS from the user's « lu » readings)
 src/lib/users.js         accounts: create/delete (admin), password change and reset, display name
 src/lib/labels.js        statuses, formats, languages, countries (French labels), sortTitle()
 src/lib/isbn.js          ISBN-10/13 validation, normalized to ISBN-13
-src/routes/              auth.js, library.js, books.js, users.js (profile, friends, admin), stats.js
+src/routes/              auth.js, library.js, books.js, users.js (profile, friends, admin), stats.js, copies.js
 src/services/metadata/   ISBN lookup: googlebooks.js, bnf.js, openlibrary.js, merged in index.js; covers.js finds cover candidates
 src/scripts/fill-covers.js  one-off: fetch covers for editions that have none (`npm run couvertures`)
 src/scripts/make-icons.js   regenerates the home screen PNG icons (`npm run icones`), commit the output
@@ -111,6 +112,9 @@ Schema changes go in a **new** migration file (`002_….sql`); never edit `001_i
 - **One genre per work** (confirmed by the owner, Phase 5). Genre breakdowns add up to 100 %.
 - Statistics count only `lu` readings, using the reader's edition (else the work's first) for pages, format and language. Books read without `finished_on` count in totals and breakdowns but not in the per-year/per-month charts (a note says how many). `/statistiques` for me, `/amis/:username/statistiques` for a friend, `?annee=YYYY` for one year.
 - Charts are plain HTML/CSS (no chart library): one series in `--chart` (light `#23805f`, dark `#3f9c76`, both checked for contrast against the card surface). Bars and values are absolutely positioned inside `.columns__plot`. Past 12 columns, values move to a « Voir les chiffres » table.
+- Copies and loans: only the owner can act on a copy (`getOwnCopy` → 404 otherwise). Friends see that someone owns a copy (« Chez les amis »), never who borrowed it. One open loan per copy; a return is dated today but never before the loan date. Borrower names are free text, suggested from users and past borrowers (`<datalist>`).
+- htmx forms confirm with `hx-confirm`; plain forms with `data-confirm`. Don't put both on one form (double prompt).
+- Copy actions answer htmx with `partials/copies.njk`; without htmx they redirect to the book, or to `/prets` when the form sends `retour=/prets` (the only other address accepted).
 - Nunjucks caches templates once rendered, even outside production: restart the server after editing a `.njk` file (`node --watch` only restarts on JS changes).
 - After creating a book the redirect carries `?ajoute=1` (notice + "Ajouter un autre livre"); `app.js` strips it from the URL.
 
@@ -121,7 +125,7 @@ Schema changes go in a **new** migration file (`002_….sql`); never edit `001_i
 - [x] **Phase 3:** mobile polish (scan flow, home screen install)
 - [x] **Phase 4:** admin page to create and delete accounts, password change, user profiles, other users' reviews on book pages, "what my friends read" view
 - [x] **Phase 5:** statistics (books and pages per year; breakdowns by genre, language, country, format)
-- [ ] **Phase 6:** physical copies and loans (free-text borrower), "who has my book" view
+- [x] **Phase 6:** physical copies and loans (free-text borrower), "who has my book" view
 - [ ] **Phase 7:** CSV export, Goodreads CSV import
 
 ## Open questions

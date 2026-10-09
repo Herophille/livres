@@ -1043,3 +1043,42 @@ a.chip { color: inherit; text-decoration: none !important; }
 /* « Autres » : regroupement, en gris pour ne pas passer pour une catégorie */
 .bars__row--other .bars__bar { background: var(--text-2); opacity: 0.45; }
 .bars__row--other .bars__label { color: var(--text-2); }
+
+/* ---------- Phase 6 : exemplaires et prêts ---------- */
+
+/* Section « Mes exemplaires » de la page livre */
+.copy { padding: 12px 0; border-top: 0.5px solid var(--line); }
+.copy:first-of-type { border-top: 0; padding-top: 0; }
+.copy__label { margin: 0 0 8px; font-weight: 600; }
+.copy__note { font-weight: 400; color: var(--text-2); }
+.copy__loan { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 0 0 10px; font-size: 15px; }
+.copy form { margin: 0; }
+.copy__remove { margin: 8px 0 0; font-size: 14px; }
+.badge--loan { background: color-mix(in srgb, var(--st-en_pause) 18%, transparent); color: var(--text); }
+
+/* Formulaires dépliables (prêter, ajouter un exemplaire) : le bouton est le <summary> */
+.copy__lend > summary, .copy-add > summary { display: inline-flex; list-style: none; }
+.copy__lend > summary::-webkit-details-marker, .copy-add > summary::-webkit-details-marker { display: none; }
+.copy__lend[open] > summary, .copy-add[open] > summary { display: none; }
+.copy__form {
+  display: grid;
+  gap: 12px;
+  margin-top: 4px;
+  padding: 12px;
+  border-radius: var(--radius-s);
+  background: var(--bg);
+}
+.copy__form .field { margin: 0; }
+.copy__form input:where(:not([type=radio], [type=checkbox])), .copy__form select { background: var(--surface); }
+.copy__form .button { justify-self: start; }
+.copy-add { margin-top: 12px; }
+.copies:not(:has(.copy)) .copy-add { margin-top: 0; }
+
+/* Page « Mes prêts » */
+.loans { margin-bottom: 24px; }
+.loan { display: flex; align-items: center; }
+.loan .booklist__row { flex: 1; min-width: 0; }
+.loan__action { margin: 0; padding-right: 16px; }
+.loan__detail { font-size: 14px; color: var(--text-2); margin-top: 2px; }
+.loan__detail strong { color: var(--text); font-weight: 600; }
+.section-title__n { font-weight: 400; color: var(--text-2); font-size: 17px; }

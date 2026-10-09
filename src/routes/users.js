@@ -3,6 +3,7 @@ import {
 } from '../lib/users.js';
 import { friendsOverview, listLibrary, libraryCounts, SORTS } from '../lib/books.js';
 import { STATUSES, STATUS_LABELS } from '../lib/labels.js';
+import { activeLoanCount } from '../lib/copies.js';
 
 function parseId(raw) {
   const id = parseInt(raw, 10);
@@ -13,7 +14,8 @@ export default async function userRoutes(app) {
   // ---------- Profil ----------
 
   const profile = (req, reply, extra = {}, code = 200) => reply.code(code).viewAsync('profile.njk', {
-    title: 'Profil', minPassword: MIN_PASSWORD, counts: libraryCounts(req.user.id), ...extra,
+    title: 'Profil', minPassword: MIN_PASSWORD, counts: libraryCounts(req.user.id),
+    activeLoans: activeLoanCount(req.user.id), ...extra,
   });
 
   app.get('/profil', async (req, reply) => profile(req, reply, {
