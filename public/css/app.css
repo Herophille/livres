@@ -1082,3 +1082,32 @@ a.chip { color: inherit; text-decoration: none !important; }
 .loan__detail { font-size: 14px; color: var(--text-2); margin-top: 2px; }
 .loan__detail strong { color: var(--text); font-weight: 600; }
 .section-title__n { font-weight: 400; color: var(--text-2); font-size: 17px; }
+
+/* ---------- Phase 7 : import et export ---------- */
+
+.steps { margin: 0 0 16px; padding-left: 22px; font-size: 15px; }
+.steps li + li { margin-top: 6px; }
+.file-input {
+  width: 100%;
+  padding: 10px;
+  border: 1.5px dashed var(--line);
+  border-radius: var(--radius-s);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+}
+.file-input::file-selector-button {
+  margin-right: 10px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font: 600 15px var(--ui);
+}
+.import-form .button--wide { margin-top: 4px; }
+/* Bilan d'import : le tableau des chiffres dans une carte */
+.details--flat { margin: 0 0 12px; background: var(--bg); }
+.details--flat dd { font-weight: 600; font-variant-numeric: tabular-nums; }
+.import-skipped { margin: 4px 0 12px; padding-left: 20px; font-size: 14px; color: var(--text-2); }

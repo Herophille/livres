@@ -27,6 +27,11 @@
       <span class="booklist__author">{% if activeLoans %}{{ activeLoans }} livre{{ 's' if activeLoans > 1 }} prêté{{ 's' if activeLoans > 1 }} en ce moment{% else %}Qui a mes livres, mes exemplaires papier{% endif %}</span></span>
     <span class="chevron" aria-hidden="true"></span>
   </a>
+  <a class="booklist__row" href="/import-export">
+    <span class="booklist__text"><span class="booklist__title">Importer et exporter</span>
+      <span class="booklist__author">Import Goodreads, export de ma bibliothèque en CSV</span></span>
+    <span class="chevron" aria-hidden="true"></span>
+  </a>
   {% if currentUser.role == 'admin' %}
   <a class="booklist__row" href="/admin/comptes">
     <span class="booklist__text"><span class="booklist__title">Gérer les comptes</span>

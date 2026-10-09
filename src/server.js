@@ -21,6 +21,7 @@ import bookRoutes from './routes/books.js';
 import userRoutes from './routes/users.js';
 import statsRoutes from './routes/stats.js';
 import copyRoutes from './routes/copies.js';
+import transferRoutes from './routes/transfer.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -150,6 +151,7 @@ await app.register(bookRoutes);
 await app.register(userRoutes);
 await app.register(statsRoutes);
 await app.register(copyRoutes);
+await app.register(transferRoutes);
 
 app.setNotFoundHandler((req, reply) => {
   reply.code(404).view('error.njk', { title: 'Page introuvable', message: "Cette page n'existe pas ou a été supprimée." });

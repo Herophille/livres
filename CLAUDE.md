@@ -51,14 +51,17 @@ src/db/migrations/*.sql  numbered migrations, applied in order at startup
 src/db/seed.js           first-run seed: genre list, admin account
 src/lib/auth.js          sessions (SQLite table, signed cookie), password hashing
 src/lib/books.js         all book/reading queries and form parsing, friends' readings
+src/lib/csv.js           CSV parse/write (no dependency)
+src/lib/transfer.js      CSV export of my library, Goodreads import
 src/lib/copies.js        physical copies and loans
 src/lib/stats.js         reading statistics (computed in JS from the user's « lu » readings)
 src/lib/users.js         accounts: create/delete (admin), password change and reset, display name
 src/lib/labels.js        statuses, formats, languages, countries (French labels), sortTitle()
 src/lib/isbn.js          ISBN-10/13 validation, normalized to ISBN-13
-src/routes/              auth.js, library.js, books.js, users.js (profile, friends, admin), stats.js, copies.js
+src/routes/              auth.js, library.js, books.js, users.js (profile, friends, admin), stats.js, copies.js, transfer.js
 src/services/metadata/   ISBN lookup: googlebooks.js, bnf.js, openlibrary.js, merged in index.js; covers.js finds cover candidates
 src/scripts/fill-covers.js  one-off: fetch covers for editions that have none (`npm run couvertures`)
+src/services/fill-covers.js cover search loop shared by the script and the Goodreads import (background)
 src/scripts/make-icons.js   regenerates the home screen PNG icons (`npm run icones`), commit the output
 src/services/covers.js   download/upload, resize to <name>.webp (800px) + <name>_t.webp (300px)
 src/services/backup.js   nightly SQLite backup with retention
@@ -115,6 +118,9 @@ Schema changes go in a **new** migration file (`002_….sql`); never edit `001_i
 - Copies and loans: only the owner can act on a copy (`getOwnCopy` → 404 otherwise). Friends see that someone owns a copy (« Chez les amis »), never who borrowed it. One open loan per copy; a return is dated today but never before the loan date. Borrower names are free text, suggested from users and past borrowers (`<datalist>`).
 - htmx forms confirm with `hx-confirm`; plain forms with `data-confirm`. Don't put both on one form (double prompt).
 - Copy actions answer htmx with `partials/copies.njk`; without htmx they redirect to the book, or to `/prets` when the form sends `retour=/prets` (the only other address accepted).
+- Never call `db.prepare()` at module top level: modules load before `migrate()`, so on a fresh database the tables don't exist yet and the app crashes at startup. Prepare inside functions (`db.transaction()` at top level is fine).
+- CSV export: `;` separator, UTF-8 BOM, CRLF (what French Excel expects); cells starting with `= + - @` get a leading apostrophe (formula injection).
+- Goodreads import: ISBNs come as `="…"`; series are stripped from titles (`Dune (Dune Chronicles, #1)`); exclusive shelf → status (custom shelves matched by name: abandon/dnf, pause/hold, else « À lire »); `Date Read` only for lu/abandonné. A book matches the catalogue by ISBN, else by identical `sort_title` + author surname (`findSimilarWorks` score 3). Readings already in the user's library are left untouched, so re-importing is safe. Genre, country and languages are not in the export. Covers for new editions are fetched in the background after the import.
 - Nunjucks caches templates once rendered, even outside production: restart the server after editing a `.njk` file (`node --watch` only restarts on JS changes).
 - After creating a book the redirect carries `?ajoute=1` (notice + "Ajouter un autre livre"); `app.js` strips it from the URL.
 
@@ -126,7 +132,7 @@ Schema changes go in a **new** migration file (`002_….sql`); never edit `001_i
 - [x] **Phase 4:** admin page to create and delete accounts, password change, user profiles, other users' reviews on book pages, "what my friends read" view
 - [x] **Phase 5:** statistics (books and pages per year; breakdowns by genre, language, country, format)
 - [x] **Phase 6:** physical copies and loans (free-text borrower), "who has my book" view
-- [ ] **Phase 7:** CSV export, Goodreads CSV import
+- [x] **Phase 7:** CSV export, Goodreads CSV import
 
 ## Open questions
 

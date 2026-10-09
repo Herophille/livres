@@ -1,0 +1,55 @@
+{% extends "layout.njk" %}
+{% block content %}
+<a class="back" href="/profil">Profil</a>
+<header class="page-head">
+  <h1 class="large-title large-title--small">{{ 'Import terminé' if report else 'Importer et exporter' }}</h1>
+</header>
+
+{% if report %}
+<section class="group" aria-labelledby="report-title">
+  <h2 id="report-title" class="group-title">{{ report.total }} livre{{ 's' if report.total > 1 }} dans le fichier</h2>
+  <dl class="details details--flat">
+    <div><dt>Ajoutés à ma bibliothèque</dt><dd>{{ report.added }}</dd></div>
+    <div><dt>Déjà dans ma bibliothèque (inchangés)</dt><dd>{{ report.alreadyMine }}</dd></div>
+    <div><dt>Nouveaux livres dans le catalogue commun</dt><dd>{{ report.created }}</dd></div>
+    <div><dt>Retrouvés dans le catalogue commun</dt><dd>{{ report.linked }}</dd></div>
+    <div><dt>Notes et critiques</dt><dd>{{ report.reviews }}</dd></div>
+    <div><dt>Exemplaires papier</dt><dd>{{ report.copies }}</dd></div>
+  </dl>
+  {% if report.skipped.length %}
+    <p class="field-error">{{ report.skipped.length }} ligne{{ 's' if report.skipped.length > 1 }} ignorée{{ 's' if report.skipped.length > 1 }} :</p>
+    <ul class="import-skipped">{% for s in report.skipped.slice(0, 20) %}<li>{{ s }}</li>{% endfor %}</ul>
+  {% endif %}
+  {% if report.newEditions.length %}
+    <p class="hint">Les couvertures sont cherchées en arrière-plan : elles apparaîtront d'ici quelques minutes.</p>
+  {% endif %}
+  <p class="hint">Le genre et le pays ne viennent pas de Goodreads : complétez-les sur la fiche de chaque livre si vous voulez les voir dans vos statistiques.</p>
+</section>
+<p class="center"><a class="button" href="/">Voir ma bibliothèque</a></p>
+{% else %}
+
+<section class="group" aria-labelledby="export-title">
+  <h2 id="export-title" class="group-title">Exporter</h2>
+  <p class="hint hint--top">Tous les livres de ma bibliothèque, avec statuts, dates, notes, critiques et exemplaires. Le fichier s'ouvre avec Excel, LibreOffice ou Numbers.</p>
+  <a class="button button--quiet" href="/export/livres.csv" download>Télécharger le fichier CSV</a>
+</section>
+
+<form method="post" action="/import/goodreads" enctype="multipart/form-data" class="group import-form" aria-labelledby="import-title" data-busy>
+  <h2 id="import-title" class="group-title">Importer depuis Goodreads</h2>
+  <ol class="steps">
+    <li>Sur le site Goodreads (pas l'application), ouvrez <strong>My Books</strong>, puis <strong>Import and export</strong>.</li>
+    <li>Touchez <strong>Export Library</strong>, attendez que le lien apparaisse, puis téléchargez le fichier.</li>
+    <li>Choisissez ce fichier ci-dessous.</li>
+  </ol>
+  {% if error %}<p class="notice notice--error" role="alert">{{ error }}</p>{% endif %}
+  <label class="field">
+    <span class="field-label">Fichier Goodreads (.csv)</span>
+    <input type="file" name="file" accept=".csv,text/csv" required class="file-input">
+  </label>
+  <p class="hint hint--top">Les statuts, dates de lecture, notes, critiques et exemplaires possédés sont repris. Les livres déjà présents dans votre bibliothèque ne sont pas modifiés : vous pouvez relancer l'import sans risque.</p>
+  <button type="submit" class="button button--wide">
+    <span class="when-idle">Importer</span><span class="when-busy">Import en cours…</span>
+  </button>
+</form>
+{% endif %}
+{% endblock %}

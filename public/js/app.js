@@ -53,6 +53,21 @@ document.addEventListener('change', (event) => {
   window.addEventListener('pageshow', stop);
 })();
 
+// Formulaires longs à traiter (<form data-busy>) : le bouton affiche son état « occupé »
+// et ne peut pas être touché deux fois
+document.addEventListener('submit', (event) => {
+  const form = event.target;
+  if (event.defaultPrevented || !form.hasAttribute?.('data-busy')) return;
+  const button = event.submitter || form.querySelector('button[type=submit]');
+  if (!button) return;
+  button.classList.add('is-busy');
+  setTimeout(() => { button.disabled = true; }, 0);
+});
+window.addEventListener('pageshow', (event) => {
+  if (!event.persisted) return;
+  document.querySelectorAll('form[data-busy] .is-busy').forEach((b) => { b.classList.remove('is-busy'); b.disabled = false; });
+});
+
 // Lien « retour » : si l'on vient de cette page, on revient en arrière dans l'historique,
 // ce qui conserve les filtres et la position de défilement de la bibliothèque
 document.addEventListener('click', (event) => {
