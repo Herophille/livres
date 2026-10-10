@@ -112,6 +112,15 @@ app.addHook('onRequest', async (req, reply) => {
   return reply.redirect('/connexion');
 });
 
+// Une même adresse renvoie la page entière ou un fragment htmx (bibliothèque, recherche).
+// Sans cet en-tête, le bouton Retour peut ressortir le fragment du cache du navigateur.
+app.addHook('onSend', async (req, reply, payload) => {
+  if (String(reply.getHeader('content-type') || '').startsWith('text/html')) {
+    reply.header('Vary', 'HX-Request, HX-Target');
+  }
+  return payload;
+});
+
 // Variables disponibles dans tous les gabarits
 app.addHook('preHandler', async (req, reply) => {
   reply.locals = { currentUser: req.user, path: req.url.split('?')[0] };

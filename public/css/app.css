@@ -1111,3 +1111,27 @@ a.chip { color: inherit; text-decoration: none !important; }
 .details--flat { margin: 0 0 12px; background: var(--bg); }
 .details--flat dd { font-weight: 600; font-variant-numeric: tabular-nums; }
 .import-skipped { margin: 4px 0 12px; padding-left: 20px; font-size: 14px; color: var(--text-2); }
+
+/* ---------- Recherche par titre (page d'ajout) ---------- */
+
+.search-fields { display: grid; grid-template-columns: 1fr; gap: 8px; }
+@media (min-width: 560px) { .search-fields { grid-template-columns: 1fr 1fr auto; } }
+.search-results > :first-child { margin-top: 14px; }
+.results { margin: 0 -16px -16px; border-radius: 0 0 var(--radius-m) var(--radius-m); }
+.results li { border-top: 0.5px solid var(--line); }
+.results li + li::before { display: none; }
+.result__form { margin: 0; }
+/* Le résultat entier est un bouton : on lui retire l'apparence de bouton */
+.result__button {
+  width: 100%;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.result__title { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.result__meta { font-size: 13px; color: var(--text-2); margin-top: 2px; }
+.results .booklist__row:active, .results .result__button:active { background: var(--bg); }
+.result__cover { position: relative; }
+.result__cover img { position: absolute; inset: 0; background: transparent; }

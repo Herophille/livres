@@ -59,7 +59,8 @@ src/lib/users.js         accounts: create/delete (admin), password change and re
 src/lib/labels.js        statuses, formats, languages, countries (French labels), sortTitle()
 src/lib/isbn.js          ISBN-10/13 validation, normalized to ISBN-13
 src/routes/              auth.js, library.js, books.js, users.js (profile, friends, admin), stats.js, copies.js, transfer.js
-src/services/metadata/   ISBN lookup: googlebooks.js, bnf.js, openlibrary.js, merged in index.js; covers.js finds cover candidates
+src/services/metadata/   ISBN lookup: googlebooks.js, bnf.js, openlibrary.js, merged in index.js; covers.js finds cover candidates;
+                         search.js searches by title/author (add page)
 src/scripts/fill-covers.js  one-off: fetch covers for editions that have none (`npm run couvertures`)
 src/services/fill-covers.js cover search loop shared by the script and the Goodreads import (background)
 src/scripts/make-icons.js   regenerates the home screen PNG icons (`npm run icones`), commit the output
@@ -121,6 +122,9 @@ Schema changes go in a **new** migration file (`002_….sql`); never edit `001_i
 - Never call `db.prepare()` at module top level: modules load before `migrate()`, so on a fresh database the tables don't exist yet and the app crashes at startup. Prepare inside functions (`db.transaction()` at top level is fine).
 - CSV export: `;` separator, UTF-8 BOM, CRLF (what French Excel expects); cells starting with `= + - @` get a leading apostrophe (formula injection).
 - Goodreads import: ISBNs come as `="…"`; series are stripped from titles (`Dune (Dune Chronicles, #1)`); exclusive shelf → status (custom shelves matched by name: abandon/dnf, pause/hold, else « À lire »); `Date Read` only for lu/abandonné. A book matches the catalogue by ISBN, else by identical `sort_title` + author surname (`findSimilarWorks` score 3). Readings already in the user's library are left untouched, so re-importing is safe. Genre, country and languages are not in the export. Covers for new editions are fetched in the background after the import.
+- Title search (`/ajouter/recherche`): Open Library first (best ranking; `lang=fr` returns one French edition per work, but only if `key` is in `fields`), then BnF (`bib.title`/`bib.author`, records without ISBN dropped; ranking is poor), then Google Books. A result with an ISBN goes through the normal ISBN flow (`POST /ajouter/isbn`), one without opens `/ajouter/manuel` prefilled.
+- Every HTML response carries `Vary: HX-Request, HX-Target`: the same URL serves a full page or an htmx fragment, and without it the Back button can show the cached fragment alone.
+- BnF titles without " / " end with the author's name, sometimes spelled differently from the creator field ("Franck" vs "Frank"): `cleanBnfTitle` falls back to the surname, only when there's no " / ".
 - Nunjucks caches templates once rendered, even outside production: restart the server after editing a `.njk` file (`node --watch` only restarts on JS changes).
 - After creating a book the redirect carries `?ajoute=1` (notice + "Ajouter un autre livre"); `app.js` strips it from the URL.
 
@@ -136,4 +140,4 @@ Schema changes go in a **new** migration file (`002_….sql`); never edit `001_i
 
 ## Open questions
 
-- **Live ISBN lookups are untested** against the real APIs (written from documented formats). If a source returns empty or badly parsed data, fix the parser in `src/services/metadata/` using the actual response.
+- **Live lookups are only partly verified.** BnF and Open Library were checked against real responses (Oct. 2026); Google Books answers 429 without `GOOGLE_BOOKS_API_KEY`, so its parsers haven't been seen working live. If a source returns empty or badly parsed data, fix the parser in `src/services/metadata/` using the actual response.

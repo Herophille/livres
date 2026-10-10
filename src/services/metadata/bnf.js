@@ -16,12 +16,27 @@ export function parseBnfCreator(raw) {
 
 // "Le petit prince / Antoine de Saint-Exupéry ; avec…" -> "Le petit prince"
 // "Dune (Trad. revue et corrigée) Frank Herbert ; traduit…" -> "Dune"
+// "Dune (Éd. du cinquantenaire…) Franck Herbert ; traduit…" -> "Dune" (prénom orthographié
+// autrement que dans la notice d'auteur : on se repère alors au nom de famille)
 export function cleanBnfTitle(raw, authors = []) {
+  const hasSlash = raw.includes(' / ');
   let title = raw.split(' / ')[0];
   for (const name of authors) {
-    const idx = title.indexOf(name);
-    // Sans " / ", la mention d'édition entre parenthèses précède le nom de l'auteur
-    if (idx > 0) title = title.slice(0, idx).replace(/\s*\([^)]*\)\s*$/, '');
+    let idx = title.indexOf(name);
+    let dropFirstName = false;
+    // Seulement sans " / " : avant le " / ", le nom de l'auteur peut faire partie du titre
+    // (« Hommage au héros de Saint-Exupéry / … »)
+    if (idx <= 0 && !hasSlash) {
+      const surname = name.split(' ').pop();
+      idx = surname.length >= 3 ? title.indexOf(` ${surname}`) : -1;
+      dropFirstName = idx > 0;
+    }
+    if (idx > 0) {
+      title = title.slice(0, idx).trim();
+      if (dropFirstName) title = title.replace(/\s+\p{Lu}[\p{L}.'-]*$/u, '');
+      // Sans " / ", la mention d'édition entre parenthèses précède le nom de l'auteur
+      title = title.replace(/\s*\([^)]*\)\s*$/, '');
+    }
   }
   return title.split(' ; ')[0].trim() || raw.trim();
 }

@@ -7,7 +7,8 @@ import { normalizeIsbn } from '../lib/isbn.js';
 import { copiesContext } from '../lib/copies.js';
 import { STATUSES, STATUS_LABELS, FORMATS, LANGUAGES, COUNTRIES } from '../lib/labels.js';
 import { lookupIsbn } from '../services/metadata/index.js';
-import { findCovers } from '../services/metadata/covers.js';
+import { findCovers, isAllowedCoverUrl } from '../services/metadata/covers.js';
+import { searchBooks } from '../services/metadata/search.js';
 import { saveCover, saveCoverFromUrl, deleteCover } from '../services/covers.js';
 
 // Listes nécessaires au formulaire livre
@@ -70,9 +71,46 @@ export default async function bookRoutes(app) {
     });
   });
 
-  app.get('/ajouter/manuel', async (req, reply) => reply.viewAsync('form.njk', {
-    title: 'Ajouter un livre', mode: 'create', values: { status: 'a_lire' }, ...formOptions(),
-  }));
+  // Recherche par titre (et auteur) dans les catalogues en ligne
+  app.get('/ajouter/recherche', async (req, reply) => {
+    const titre = String(req.query.titre || '').trim().slice(0, 150);
+    const auteur = String(req.query.auteur || '').trim().slice(0, 100);
+    const data = { title: 'Ajouter un livre', search: { titre, auteur } };
+    if (!titre) {
+      data.search.error = 'Indiquez au moins une partie du titre.';
+    } else {
+      const { results, failed } = await searchBooks(titre, auteur);
+      // Un livre déjà au catalogue commun mène directement à sa page
+      data.search.results = results.map((r) => ({
+        ...r,
+        workId: r.isbn ? findWorkIdByIsbn(r.isbn) : null,
+        // Sans ISBN : fiche à remplir à la main, préremplie avec ce qu'on sait
+        manualUrl: r.isbn ? null : `/ajouter/manuel?${new URLSearchParams(Object.entries({
+          title: r.title, authors: r.authors, publisher: r.publisher, published_date: r.year,
+          language: r.language, cover_url: r.coverUrl,
+        }).filter(([, v]) => v))}`,
+      }));
+      data.search.failed = failed;
+    }
+    if (req.headers['hx-target'] === 'search-results') return reply.viewAsync('partials/search-results.njk', data);
+    return reply.viewAsync('add.njk', data);
+  });
+
+  // Saisie à la main, éventuellement préremplie par un résultat de recherche sans ISBN
+  app.get('/ajouter/manuel', async (req, reply) => {
+    const q = req.query;
+    const field = (name, max = 200) => String(q[name] || '').trim().slice(0, max) || undefined;
+    const coverUrl = q.cover_url && isAllowedCoverUrl(String(q.cover_url)) ? String(q.cover_url) : undefined;
+    const values = {
+      status: 'a_lire', title: field('title'), authors: field('authors'), publisher: field('publisher'),
+      published_date: field('published_date', 10), language: field('language', 3), cover_url: coverUrl,
+    };
+    return reply.viewAsync('form.njk', {
+      title: 'Ajouter un livre', mode: 'create', values, ...formOptions(),
+      covers: coverUrl ? [{ url: coverUrl, source: 'En ligne' }] : [],
+      similar: values.title ? findSimilarWorks(values) : [],
+    });
+  });
 
   // Œuvres ressemblantes, rafraîchies quand on modifie le titre ou les auteurs
   app.get('/ajouter/correspondances', async (req, reply) => {

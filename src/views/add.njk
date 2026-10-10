@@ -33,6 +33,28 @@
     {% if error %}<p id="isbn-error" class="field-error">{{ error }}</p>{% endif %}
   </form>
 
+  <section class="group" aria-label="Recherche par titre">
+  <form id="title-form" method="get" action="/ajouter/recherche"
+        hx-get="/ajouter/recherche" hx-target="#search-results" hx-push-url="true">
+    <p class="field-label">Ou cherchez par titre</p>
+    <div class="search-fields">
+      <label class="visually-hidden" for="search-title">Titre</label>
+      <input id="search-title" name="titre" value="{{ search.titre if search else '' }}" placeholder="Titre" required
+             autocomplete="off" enterkeyhint="search">
+      <label class="visually-hidden" for="search-author">Auteur</label>
+      <input id="search-author" name="auteur" value="{{ search.auteur if search else '' }}" placeholder="Auteur (facultatif)"
+             autocomplete="off" enterkeyhint="search">
+      <button type="submit" class="button">
+        <span class="when-idle">Chercher</span><span class="when-busy">Recherche…</span>
+      </button>
+    </div>
+  </form>
+  {# En dehors du formulaire de recherche : chaque résultat a son propre formulaire #}
+  <div id="search-results" class="search-results" aria-live="polite">
+    {% if search %}{% include "partials/search-results.njk" %}{% endif %}
+  </div>
+  </section>
+
   <p class="center"><a href="/ajouter/manuel">Saisir le livre à la main</a></p>
 </div>
 {% endblock %}

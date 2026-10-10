@@ -1,0 +1,50 @@
+{# Résultats de la recherche par titre : choisir un livre ouvre la fiche préremplie #}
+{% if search.error %}
+  <p class="field-error" role="alert">{{ search.error }}</p>
+{% elif search.results %}
+  {% if search.results.length %}
+  <p class="hint hint--top" role="status">{{ search.results.length }} résultat{{ 's' if search.results.length > 1 }} pour « {{ search.titre }}{% if search.auteur %} · {{ search.auteur }}{% endif %} ». Choisissez votre édition.</p>
+  <ul class="booklist results">
+    {% for r in search.results %}
+    {% set meta = [r.publisher, r.year, r.language | languageLabel, r.source] | select | join(' · ') %}
+    <li>
+      {% if r.workId %}
+        {# Déjà au catalogue commun : on va à sa page plutôt que de créer un doublon #}
+        <a class="booklist__row" href="/livres/{{ r.workId }}?existant=1">
+      {% elif r.isbn %}
+        <form method="post" action="/ajouter/isbn" class="result__form">
+          <input type="hidden" name="isbn" value="{{ r.isbn }}">
+          <button type="submit" class="booklist__row result__button">
+      {% else %}
+        <a class="booklist__row" href="{{ r.manualUrl }}">
+      {% endif %}
+          {# Couverture toilée dessous ; l'image en ligne la recouvre une fois chargée, et disparaît si elle échoue #}
+          <span class="booklist__cover result__cover">
+            {% set book = { title: r.title, authors: r.authors } %}{% set thumb = true %}{% include "partials/cover.njk" %}
+            {% if r.coverUrl %}<img class="cover" src="{{ r.coverUrl }}" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.remove()">{% endif %}
+          </span>
+          <span class="booklist__text">
+            <span class="booklist__title result__title">{{ r.title }}</span>
+            {% if r.authors %}<span class="booklist__author">{{ r.authors }}</span>{% endif %}
+            <span class="result__meta">{{ meta }}</span>
+          </span>
+          {% if r.workId %}<span class="badge">Déjà là</span>{% endif %}
+      {% if r.workId %}
+        </a>
+      {% elif r.isbn %}
+          </button>
+        </form>
+      {% else %}
+        </a>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% if search.failed.length %}<p class="chart-note">Sans réponse : {{ search.failed | join(', ') }}.</p>{% endif %}
+  {% else %}
+  <p class="hint hint--top" role="status">
+    {% if search.failed.length == 3 %}Les catalogues en ligne ne répondent pas pour l'instant. Réessayez plus tard ou saisissez le livre à la main.
+    {% else %}Aucun livre trouvé pour « {{ search.titre }} ». Vérifiez l'orthographe, essayez sans l'auteur, ou saisissez le livre à la main.{% endif %}
+  </p>
+  {% endif %}
+{% endif %}
